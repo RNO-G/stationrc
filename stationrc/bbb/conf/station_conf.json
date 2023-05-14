@@ -3,7 +3,6 @@
 		"controller_board_dev": "/dev/ttyController",
 		"controller_board_baudrate": 115200,
 		"radiant_board_dev": "/dev/ttyRadiant",
-		"radiant_board_baudrate": 1000000,
 		"run_conf": "/rno-g/cfg/acq.cfg"
 	},
 	"remote_control": {

@@ -39,7 +39,7 @@ class VirtualStation(object):
         return res
     
     def get_radiant_board_id(self):
-        return self._send_command('radiant-board', 'get_id')
+        return self._send_command('radiant-board', 'identify')
     
     def retrieve_data(self, src, delete_src=False):
         #TODO: implement removing the data on the BBB after successful rsync

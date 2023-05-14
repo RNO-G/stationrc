@@ -7,8 +7,8 @@ import threading
 import zmq
 
 import stationrc.common
+import stationrc.radiant
 from .ControllerBoard import ControllerBoard
-from .RadiantBoard import RadiantBoard
 
 
 class Station(object):
@@ -21,7 +21,7 @@ class Station(object):
         
         self.controller_board = ControllerBoard(uart_device=self.station_conf['daq']['controller_board_dev'], uart_baudrate=self.station_conf['daq']['controller_board_baudrate'])
         
-        self.radiant_board = RadiantBoard(uart_device=self.station_conf['daq']['radiant_board_dev'], uart_baudrate=self.station_conf['daq']['radiant_board_baudrate'])
+        self.radiant_board = stationrc.radiant.RADIANT(port=self.station_conf['daq']['radiant_board_dev'])
         
         self.thr_rc = threading.Thread(target=Station.receive_remote_command, args=[self])
         self.thr_rc.start()
