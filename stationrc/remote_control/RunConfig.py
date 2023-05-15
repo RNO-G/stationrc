@@ -1,4 +1,3 @@
-import json
 import libconf
 import pathlib
 
@@ -31,9 +30,6 @@ class RunConfig(object):
             self['lt']['trigger']['enable_rf_trigger'] = 1
         else:
             self['lt']['trigger']['enable_rf_trigger'] = 0
-    
-    def get_JSON(self):
-        return json.dumps(self.conf)
     
     def radiant_load_thresholds_from_file(self, value=True):
         if value:

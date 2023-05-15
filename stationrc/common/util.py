@@ -24,6 +24,6 @@ def rootify(data_dir, mattak_dir='', logger=logging.getLogger('root')):
 
 
 def setup_logging():    
-    with open(pathlib.Path(__file__).parent / 'conf/logging_conf.json', 'r') as f:
+    with open(pathlib.Path(__file__).parent / 'conf' / 'logging_conf.json', 'r') as f:
         conf = json.load(f)
     logging.config.dictConfig(conf)

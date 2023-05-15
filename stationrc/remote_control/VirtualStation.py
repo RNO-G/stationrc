@@ -41,6 +41,15 @@ class VirtualStation(object):
     def get_radiant_board_id(self):
         return self._send_command('radiant-board', 'identify')
     
+    def radiant_calib_isels(self, num_iterations=10, buff=32, step=4, voltage_setting=1250):
+        return self._send_command('station', 'radiant_calib_isels', { 'num_iterations': num_iterations, 'buff': buff, 'step': step, 'voltage_setting': voltage_setting })
+
+    def radiant_setup(self):
+        return self._send_command('station', 'radiant_setup')
+
+    def radiant_tune_initial(self, reset=False, mask=0xFFFFFF):
+        return self._send_command('station', 'radiant_tune_initial', { 'reset': reset, 'mask': mask })
+
     def retrieve_data(self, src, delete_src=False):
         #TODO: implement removing the data on the BBB after successful rsync
         
@@ -48,12 +57,12 @@ class VirtualStation(object):
         self.proc.wait()
     
     def set_run_conf(self, conf):
-        self._send_command('station', 'write_run_conf', conf.get_JSON())
+        self._send_command('station', 'write_run_conf', conf)
     
     def _send_command(self, device, cmd, data=None):
         tx = { 'device': device, 'cmd': cmd }
         if data != None:
-            tx['data'] = data
+            tx['data'] = json.dumps(data)
         self.logger.debug(f'Sending command: "{tx}".')
         self.socket.send_json(tx)
         message = self.socket.recv_json()

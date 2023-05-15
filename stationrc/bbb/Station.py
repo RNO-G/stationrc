@@ -16,7 +16,7 @@ class Station(object):
     def __init__(self):
         self.logger = logging.getLogger('Station')
         
-        with open(pathlib.Path(__file__).parent / 'conf/station_conf.json', 'r') as f:
+        with open(pathlib.Path(__file__).parent / 'conf' / 'station_conf.json', 'r') as f:
             self.station_conf = json.load(f)
         
         self.controller_board = ControllerBoard(uart_device=self.station_conf['daq']['controller_board_dev'], uart_baudrate=self.station_conf['daq']['controller_board_baudrate'])
@@ -44,6 +44,16 @@ class Station(object):
             runnumber = int(f.readline())
         return pathlib.Path(conf['output']['base_dir']) / f'run{runnumber}'
     
+    def radiant_calib_isels(self, data):
+        stationrc.radiant.calib_isels(self.radiant_board, niter=data['num_iterations'], buff=data['buff'], step=data['step'], voltage_setting=data['voltage_setting'])
+
+    def radiant_setup(self):
+        stationrc.radiant.setup_radiant(self.radiant_board)
+
+    def radiant_tune_initial(self, data):
+        fail_mask = stationrc.radiant.tune_initial(self.radiant_board, do_reset=data['reset'], mask=data['mask'])
+        return { 'fail_mask': fail_mask }
+
     def receive_remote_command(self):
         context = zmq.Context()
         socket = context.socket(zmq.REP)
