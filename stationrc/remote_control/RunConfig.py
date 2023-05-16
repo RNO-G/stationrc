@@ -68,18 +68,15 @@ class RunConfig(object):
             self['radiant']['trigger']['RF1']['enabled'] = 1
         else:
             self['radiant']['trigger']['RF1']['enabled'] = 0
-
-    def radiant_trigger_rf1_enable(self, value=True):
-        if value:
-            self['radiant']['trigger']['RF1']['enabled'] = 1
-        else:
-            self['radiant']['trigger']['RF1']['enabled'] = 0
     
     def radiant_trigger_rf1_mask(self, channels):
         mask = 0
         for ch in channels:
             mask |= (1 << ch)
         self['radiant']['trigger']['RF1']['mask'] = mask
+
+    def radiant_trigger_rf1_num_coincidences(self, value):
+        self['radiant']['trigger']['RF1']['num_coincidences'] = value
 
     def radiant_trigger_soft_enable(self, value=True):
         if value:
