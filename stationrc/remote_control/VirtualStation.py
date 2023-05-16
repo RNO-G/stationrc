@@ -51,14 +51,22 @@ class VirtualStation(object):
         return self._send_command('station', 'radiant_tune_initial', { 'reset': reset, 'mask': mask })
 
     def retrieve_data(self, src, delete_src=False):
-        #TODO: implement removing the data on the BBB after successful rsync
+        cmd = ['rsync', '--archive', '--compress', '--verbose', '--stats']
+        if delete_src:
+            cmd.append('--remove-source-files')
         
-        self.proc = stationrc.common.Executor(cmd=['rsync', '--archive', '--compress', '--verbose', '--stats', f'{self.station_conf["remote_control"]["user"]}@{self.station_conf["remote_control"]["host"]}:{src}', self.station_conf['daq']['data_directory']], logger=self.logger)
+        self.proc = stationrc.common.Executor(cmd=cmd + [f'{self.station_conf["remote_control"]["user"]}@{self.station_conf["remote_control"]["host"]}:{src}', self.station_conf['daq']['data_directory']], logger=self.logger)
         self.proc.wait()
     
     def set_run_conf(self, conf):
-        self._send_command('station', 'write_run_conf', conf)
+        self._send_command('station', 'write_run_conf', conf.conf)
     
+    def surface_amps_power_off(self):
+        self._send_command('controller-board', '#AMPS-SET 0 0')
+
+    def surface_amps_power_on(self):
+        self._send_command('controller-board', '#AMPS-SET 22 0')
+
     def _send_command(self, device, cmd, data=None):
         tx = { 'device': device, 'cmd': cmd }
         if data != None:

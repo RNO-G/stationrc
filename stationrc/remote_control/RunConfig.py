@@ -28,8 +28,10 @@ class RunConfig(object):
     def flower_trigger_enable(self, value=True):
         if value:
             self['lt']['trigger']['enable_rf_trigger'] = 1
+            self['radiant']['trigger']['ext']['enabled'] = 1
         else:
             self['lt']['trigger']['enable_rf_trigger'] = 0
+            self['radiant']['trigger']['ext']['enabled'] = 0
     
     def radiant_load_thresholds_from_file(self, value=True):
         if value:
@@ -43,18 +45,42 @@ class RunConfig(object):
         else:
             self['radiant']['servo']['enable'] = 0
     
+    def radiant_threshold_initial(self, ch, value):
+        self['radiant']['thresholds']['initial'][ch] = value
+
     def radiant_trigger_rf0_enable(self, value=True):
         if value:
             self['radiant']['trigger']['RF0']['enabled'] = 1
         else:
             self['radiant']['trigger']['RF0']['enabled'] = 0
     
+    def radiant_trigger_rf0_mask(self, channels):
+        mask = 0
+        for ch in channels:
+            mask |= (1 << ch)
+        self['radiant']['trigger']['RF0']['mask'] = mask
+
+    def radiant_trigger_rf0_num_coincidences(self, value):
+        self['radiant']['trigger']['RF0']['num_coincidences'] = value
+
+    def radiant_trigger_rf1_enable(self, value=True):
+        if value:
+            self['radiant']['trigger']['RF1']['enabled'] = 1
+        else:
+            self['radiant']['trigger']['RF1']['enabled'] = 0
+
     def radiant_trigger_rf1_enable(self, value=True):
         if value:
             self['radiant']['trigger']['RF1']['enabled'] = 1
         else:
             self['radiant']['trigger']['RF1']['enabled'] = 0
     
+    def radiant_trigger_rf1_mask(self, channels):
+        mask = 0
+        for ch in channels:
+            mask |= (1 << ch)
+        self['radiant']['trigger']['RF1']['mask'] = mask
+
     def radiant_trigger_soft_enable(self, value=True):
         if value:
             self['radiant']['trigger']['soft']['enabled'] = 1
