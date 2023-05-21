@@ -38,11 +38,17 @@ class VirtualStation(object):
         res['temp']['timestamp'] = int(tokens[43][:-1])
         return res
     
+    def get_radiant_board_dna(self):
+        return int(self._send_command('radiant-board', 'dna'))
+
     def get_radiant_board_id(self):
         return self._send_command('radiant-board', 'identify')
     
     def radiant_calib_isels(self, num_iterations=10, buff=32, step=4, voltage_setting=1250):
         return self._send_command('station', 'radiant_calib_isels', { 'num_iterations': num_iterations, 'buff': buff, 'step': step, 'voltage_setting': voltage_setting })
+
+    def radiant_read_register(self, name):
+        return self._send_command('radiant-board', 'readReg', name)
 
     def radiant_setup(self):
         return self._send_command('station', 'radiant_setup')
