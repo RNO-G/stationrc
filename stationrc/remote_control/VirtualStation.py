@@ -44,6 +44,9 @@ class VirtualStation(object):
     def get_radiant_board_id(self):
         return self._send_command('radiant-board', 'identify')
     
+    def radiant_calselect(self, quad):
+        return self._send_command('radiant-board', 'calSelect', { 'quad': quad })
+
     def radiant_calib_isels(self, num_iterations=10, buff=32, step=4, voltage_setting=1250):
         return self._send_command('station', 'radiant_calib_isels', { 'num_iterations': num_iterations, 'buff': buff, 'step': step, 'voltage_setting': voltage_setting })
 
@@ -52,6 +55,18 @@ class VirtualStation(object):
 
     def radiant_setup(self):
         return self._send_command('station', 'radiant_setup')
+
+    def radiant_sig_gen_configure(self, pulse=False, band=0):
+        self._send_command('radiant-sig-gen', 'signal', { 'pulse': pulse, 'band': band })
+
+    def radiant_sig_gen_off(self):
+        self._send_command('radiant-sig-gen', 'enable', { 'onoff': False })
+
+    def radiant_sig_gen_on(self):
+        self._send_command('radiant-sig-gen', 'enable', { 'onoff': True })
+
+    def radiant_sig_gen_set_frequency(self, frequency):
+        self._send_command('radiant-sig-gen', 'setFrequency', { 'freq': frequency })
 
     def radiant_tune_initial(self, reset=False, mask=0xFFFFFF):
         return self._send_command('station', 'radiant_tune_initial', { 'reset': reset, 'mask': mask })
@@ -65,7 +80,7 @@ class VirtualStation(object):
         self.proc.wait()
     
     def set_run_conf(self, conf):
-        self._send_command('station', 'write_run_conf', conf.conf)
+        self._send_command('station', 'write_run_conf', { 'data': conf.conf })
     
     def surface_amps_power_off(self):
         self._send_command('controller-board', '#AMPS-SET 0 0')

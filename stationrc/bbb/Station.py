@@ -23,7 +23,7 @@ class Station(object):
         
         self.radiant_board = stationrc.radiant.RADIANT(port=self.station_conf['daq']['radiant_board_dev'])
         
-        self.thr_rc = threading.Thread(target=Station.receive_remote_command, args=[self])
+        self.thr_rc = threading.Thread(target=Station._receive_remote_command, args=[self])
         self.thr_rc.start()
     
     def daq_run_start(self):
@@ -44,17 +44,21 @@ class Station(object):
             runnumber = int(f.readline())
         return pathlib.Path(conf['output']['base_dir']) / f'run{runnumber}'
     
-    def radiant_calib_isels(self, data):
-        stationrc.radiant.calib_isels(self.radiant_board, niter=data['num_iterations'], buff=data['buff'], step=data['step'], voltage_setting=data['voltage_setting'])
+    def radiant_calib_isels(self, niter=10, buff=32, step=4, voltage_setting=1250):
+        stationrc.radiant.calib_isels(self.radiant_board, niter=niter, buff=buff, step=step, voltage_setting=voltage_setting)
 
     def radiant_setup(self):
         stationrc.radiant.setup_radiant(self.radiant_board)
 
-    def radiant_tune_initial(self, data):
-        fail_mask = stationrc.radiant.tune_initial(self.radiant_board, do_reset=data['reset'], mask=data['mask'])
+    def radiant_tune_initial(self, reset=False, mask=0xFFFFFF):
+        fail_mask = stationrc.radiant.tune_initial(self.radiant_board, do_reset=reset, mask=mask)
         return { 'fail_mask': fail_mask }
 
-    def receive_remote_command(self):
+    def write_run_conf(self, data):
+        with open(self.station_conf['daq']['run_conf'], 'w') as f:
+            libconf.dump(data, f)
+
+    def _receive_remote_command(self):
         context = zmq.Context()
         socket = context.socket(zmq.REP)
         socket.bind(f'tcp://*:{self.station_conf["remote_control"]["port"]}')
@@ -70,9 +74,11 @@ class Station(object):
                 res = self.controller_board.run_command(message['cmd'])
                 socket.send_json({ 'status': 'OK', 'data': res })
             
-            elif message['device'] in ['radiant-board', 'station']:
+            elif message['device'] in ['radiant-board', 'radiant-sig-gen', 'station']:
                 if message['device'] == 'radiant-board':
                     dev = self.radiant_board
+                elif message['device'] == 'radiant-sig-gen':
+                    dev = self.radiant_board.radsig
                 elif message['device'] == 'station':
                     dev = self
                 
@@ -80,7 +86,7 @@ class Station(object):
                     func = getattr(dev, message['cmd'])
                     if 'data' in message:
                         data = json.loads(message['data'])
-                        res = func(data)
+                        res = func(**data)
                     else:
                         res = func()
                     if res != None:
@@ -88,11 +94,7 @@ class Station(object):
                     else:
                         socket.send_json({ 'status': 'OK' })
                 else:
-                    socket.send_json({ 'status': 'UNKNOWN' })
+                    socket.send_json({ 'status': 'UNKNOWN_CMD' })
             
             else:
-                socket.send_json({ 'status': 'UNKNOWN' })
-    
-    def write_run_conf(self, data):
-        with open(self.station_conf['daq']['run_conf'], 'w') as f:
-            libconf.dump(data, f)
+                socket.send_json({ 'status': 'UNKNOWN_DEV' })
