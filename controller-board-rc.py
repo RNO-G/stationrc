@@ -5,12 +5,12 @@ import stationrc.remote_control
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('command', type=str, help='command to be sent to station')
+parser.add_argument("command", type=str, help="command to be sent to station")
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
 
 station = stationrc.remote_control.VirtualStation()
 
-data = station._send_command('controller-board', args.command)
+data = station._send_command("controller-board", args.command)
 print(data)

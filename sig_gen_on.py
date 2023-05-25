@@ -5,9 +5,24 @@ import stationrc.remote_control
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-f', '--frequency', type=float, default=400, help='sine wave generator frequency in MHz')
-parser.add_argument('--pulse', action='store_true', help='switch signal generator to pulse mode')
-parser.add_argument('-q', '--quad', type=int, choices=[0, 1, 2, 3, 4, 5], default=0, help='quad to connect to the signal generator')
+parser.add_argument(
+    "-f",
+    "--frequency",
+    type=float,
+    default=400,
+    help="sine wave generator frequency in MHz",
+)
+parser.add_argument(
+    "--pulse", action="store_true", help="switch signal generator to pulse mode"
+)
+parser.add_argument(
+    "-q",
+    "--quad",
+    type=int,
+    choices=[0, 1, 2, 3, 4, 5],
+    default=0,
+    help="quad to connect to the signal generator",
+)
 args = parser.parse_args()
 
 stationrc.common.setup_logging()

@@ -12,89 +12,107 @@ from .ControllerBoard import ControllerBoard
 
 
 class Station(object):
-    
     def __init__(self):
-        self.logger = logging.getLogger('Station')
-        
-        with open(pathlib.Path(__file__).parent / 'conf' / 'station_conf.json', 'r') as f:
+        self.logger = logging.getLogger("Station")
+
+        with open(
+            pathlib.Path(__file__).parent / "conf" / "station_conf.json", "r"
+        ) as f:
             self.station_conf = json.load(f)
-        
-        self.controller_board = ControllerBoard(uart_device=self.station_conf['daq']['controller_board_dev'], uart_baudrate=self.station_conf['daq']['controller_board_baudrate'])
-        
-        self.radiant_board = stationrc.radiant.RADIANT(port=self.station_conf['daq']['radiant_board_dev'])
-        
-        self.thr_rc = threading.Thread(target=Station._receive_remote_command, args=[self])
+
+        self.controller_board = ControllerBoard(
+            uart_device=self.station_conf["daq"]["controller_board_dev"],
+            uart_baudrate=self.station_conf["daq"]["controller_board_baudrate"],
+        )
+
+        self.radiant_board = stationrc.radiant.RADIANT(
+            port=self.station_conf["daq"]["radiant_board_dev"]
+        )
+
+        self.thr_rc = threading.Thread(
+            target=Station._receive_remote_command, args=[self]
+        )
         self.thr_rc.start()
-    
+
     def daq_run_start(self):
         data_dir = self.get_data_dir()
-        self.acq_proc = stationrc.common.Executor(cmd='/rno-g/bin/rno-g-acq', logger=self.logger)
-        return { 'data_dir': str(data_dir) }
-    
+        self.acq_proc = stationrc.common.Executor(
+            cmd="/rno-g/bin/rno-g-acq", logger=self.logger
+        )
+        return {"data_dir": str(data_dir)}
+
     def daq_run_terminate(self):
         self.acq_proc.terminate()
-    
+
     def daq_run_wait(self):
         self.acq_proc.wait()
-    
+
     def get_data_dir(self):
-        with open(self.station_conf['daq']['run_conf'], 'r') as f:
+        with open(self.station_conf["daq"]["run_conf"], "r") as f:
             conf = libconf.load(f)
-        with open(conf['output']['runfile'], 'r') as f:
+        with open(conf["output"]["runfile"], "r") as f:
             runnumber = int(f.readline())
-        return pathlib.Path(conf['output']['base_dir']) / f'run{runnumber}'
-    
+        return pathlib.Path(conf["output"]["base_dir"]) / f"run{runnumber}"
+
     def radiant_calib_isels(self, niter=10, buff=32, step=4, voltage_setting=1250):
-        stationrc.radiant.calib_isels(self.radiant_board, niter=niter, buff=buff, step=step, voltage_setting=voltage_setting)
+        stationrc.radiant.calib_isels(
+            self.radiant_board,
+            niter=niter,
+            buff=buff,
+            step=step,
+            voltage_setting=voltage_setting,
+        )
 
     def radiant_setup(self):
         stationrc.radiant.setup_radiant(self.radiant_board)
 
     def radiant_tune_initial(self, reset=False, mask=0xFFFFFF):
-        fail_mask = stationrc.radiant.tune_initial(self.radiant_board, do_reset=reset, mask=mask)
-        return { 'fail_mask': fail_mask }
+        fail_mask = stationrc.radiant.tune_initial(
+            self.radiant_board, do_reset=reset, mask=mask
+        )
+        return {"fail_mask": fail_mask}
 
     def write_run_conf(self, data):
-        with open(self.station_conf['daq']['run_conf'], 'w') as f:
+        with open(self.station_conf["daq"]["run_conf"], "w") as f:
             libconf.dump(data, f)
 
     def _receive_remote_command(self):
         context = zmq.Context()
         socket = context.socket(zmq.REP)
         socket.bind(f'tcp://*:{self.station_conf["remote_control"]["port"]}')
-        
+
         while True:
             message = socket.recv_json()
             self.logger.debug(f'Received remote command: "{message}".')
-            if not ('device' in message and 'cmd' in message):
+            if not ("device" in message and "cmd" in message):
                 self.logger.error(f'Received malformed command: "{message}".')
-                socket.send_json({ 'status': 'ERROR' })
-            
-            elif message['device'] == 'controller-board':
-                res = self.controller_board.run_command(message['cmd'])
-                socket.send_json({ 'status': 'OK', 'data': res })
-            
-            elif message['device'] in ['radiant-board', 'radiant-sig-gen', 'station']:
-                if message['device'] == 'radiant-board':
+                socket.send_json({"status": "ERROR"})
+
+            elif message["device"] == "controller-board":
+                res = self.controller_board.run_command(message["cmd"])
+                socket.send_json({"status": "OK", "data": res})
+
+            elif message["device"] in ["radiant-board", "radiant-sig-gen", "station"]:
+                if message["device"] == "radiant-board":
                     dev = self.radiant_board
-                elif message['device'] == 'radiant-sig-gen':
+                elif message["device"] == "radiant-sig-gen":
                     dev = self.radiant_board.radsig
-                elif message['device'] == 'station':
+                elif message["device"] == "station":
                     dev = self
-                
-                if hasattr(dev, message['cmd']):
-                    func = getattr(dev, message['cmd'])
-                    if 'data' in message:
-                        data = json.loads(message['data'])
+
+                if hasattr(dev, message["cmd"]):
+                    func = getattr(dev, message["cmd"])
+                    if "data" in message:
+                        data = json.loads(message["data"])
                         res = func(**data)
                     else:
                         res = func()
                     if res != None:
-                        socket.send_json({ 'status': 'OK', 'data': res })
+                        socket.send_json({"status": "OK", "data": res})
                     else:
-                        socket.send_json({ 'status': 'OK' })
+                        socket.send_json({"status": "OK"})
                 else:
-                    socket.send_json({ 'status': 'UNKNOWN_CMD' })
-            
+                    socket.send_json({"status": "UNKNOWN_CMD"})
+
             else:
-                socket.send_json({ 'status': 'UNKNOWN_DEV' })
+                socket.send_json({"status": "UNKNOWN_DEV"})
