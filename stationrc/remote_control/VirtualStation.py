@@ -50,20 +50,6 @@ class VirtualStation(object):
     def radiant_calselect(self, quad):
         return self._send_command("radiant-board", "calSelect", {"quad": quad})
 
-    def radiant_calib_isels(
-        self, num_iterations=10, buff=32, step=4, voltage_setting=1250
-    ):
-        return self._send_command(
-            "station",
-            "radiant_calib_isels",
-            {
-                "num_iterations": num_iterations,
-                "buff": buff,
-                "step": step,
-                "voltage_setting": voltage_setting,
-            },
-        )
-
     def radiant_read_register(self, name):
         return self._send_command("radiant-board", "readReg", name)
 
