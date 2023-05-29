@@ -1,0 +1,174 @@
+{
+    "DAQSTATUS": {
+        "v5": [
+            [
+                "when_radiant",
+                "double"
+            ],
+            [
+                "when_lt",
+                "double"
+            ],
+            [
+                "radiant_thresholds",
+                "uint32",
+                ["RNO_G_NUM_RADIANT_CHANNELS"]
+            ], 
+            [
+                "radiant_scalers",
+                "uint16",
+                ["RNO_G_NUM_RADIANT_CHANNELS"]
+            ], 
+            [
+                "radiant_prescalers",
+                "uint8",
+                ["RNO_G_NUM_RADIANT_CHANNELS"]
+            ], 
+            [
+                "radiant_scaler_period",
+                "float"
+            ], 
+            [
+                "lt_trigger_thresholds",
+                "uint8",
+                ["RNO_G_NUM_LT_CHANNELS"]
+            ], 
+            [
+                "lt_servo_thresholds",
+                "uint8",
+                ["RNO_G_NUM_LT_CHANNELS"]
+            ], 
+            [
+                "lt_scalers",
+                "rno_g_lt_scalers"
+            ],
+            [
+                "radiant_voltages",
+                "rno_g_radiant_voltages"
+            ],
+            [
+                "cal",
+                "rno_g_calpulser_info"
+            ],
+            [
+                "station",
+                "uint8"
+            ],
+            [
+                "_padding?",
+                "uint8",
+                [7]
+            ]
+        ]
+    },
+    "RNO-G_CALPULSER_INFO": {
+        "v0": [
+            [
+                "_bitfield_stuff",
+                "uint16",
+                [3]
+            ]
+        ]
+    },
+    "RNO-G_LT_SCALER_GROUP": {
+        "v0": [
+            [
+                "trig_coinc",
+                "uint16"
+            ],
+            [
+                "trig_per_chan",
+                "uint16",
+                ["RNO_G_NUM_LT_CHANNELS"]
+            ],
+            [
+                "servo_coinc",
+                "uint16"
+            ],
+            [
+                "servo_per_chan",
+                "uint16",
+                ["RNO_G_NUM_LT_CHANNELS"]
+            ]
+        ]
+    },
+    "RNO-G_LT_SCALERS": {
+        "v0": [
+            [
+                "s_1Hz",
+                "rno_g_lt_scaler_group"
+            ],
+            [
+                "s_1Hz_gated",
+                "rno_g_lt_scaler_group"
+            ],
+            [
+                "s_100Hz",
+                "rno_g_lt_scaler_group"
+            ],
+            [
+                "_bitfield_stuff",
+                "uint16",
+                [12]
+            ]
+        ]
+    },
+    "RNO-G_RADIANT_VOLTAGES": {
+        "v0": [
+            [
+                "V_1_0",
+                "uint16"
+            ],
+            [
+                "V_1_8",
+                "uint16"
+            ],
+            [
+                "V_2_5",
+                "uint16"
+            ],
+            [
+                "V_LeftMon",
+                "uint16"
+            ],
+            [
+                "V_RightMon",
+                "uint16"
+            ]
+        ]
+    },
+    "WAVEFORM": {
+        "v3": [
+            [
+                "event_number",
+                "uint32"
+            ],
+            [
+                "run_number",
+                "uint32"
+            ],
+            [
+                "radiant_nsamples",
+                "uint16"
+            ],
+            [
+                "lt_nsamples",
+                "uint16"
+            ],
+            [
+                "radiant_waveforms",
+                "int16",
+                ["RNO_G_NUM_RADIANT_CHANNELS", "$radiant_nsamples"]
+            ],
+            [
+                "lt_waveforms",
+                "uint8",
+                ["RNO_G_NUM_LT_CHANNELS", "$lt_nsamples"]
+            ],
+            [
+                "station",
+                "uint8"
+            ]
+        ]
+    }
+}
