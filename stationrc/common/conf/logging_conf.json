@@ -26,6 +26,12 @@
 		},
 		"VirtualStation": {
 			"level": "DEBUG"			
+		},
+		"matplotlib.font_manager": {
+			"level": "WARNING"
+		},
+		"matplotlib.pyplot": {
+			"level": "WARNING"
 		}
 	},
 	"root": {

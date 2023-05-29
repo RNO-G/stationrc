@@ -21,6 +21,28 @@ class VirtualStation(object):
             f'tcp://{self.station_conf["remote_control"]["host"]}:{self.station_conf["remote_control"]["port"]}'
         )
 
+    def daq_record_data(
+        self,
+        num_events=1,
+        trigger_channels=[],
+        trigger_threshold=1.05,
+        trigger_coincidence=1,
+        force_trigger=False,
+        force_trigger_interval=1,
+    ):
+        return self._send_command(
+            "station",
+            "daq_record_data",
+            {
+                "num_events": num_events,
+                "trigger_channels": trigger_channels,
+                "trigger_threshold": trigger_threshold,
+                "trigger_coincidence": trigger_coincidence,
+                "force_trigger": force_trigger,
+                "force_trigger_interval": force_trigger_interval,
+            },
+        )
+
     def daq_run_start(self):
         return self._send_command("station", "daq_run_start")
 

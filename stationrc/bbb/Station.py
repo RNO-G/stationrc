@@ -2,7 +2,6 @@ import json
 import libconf
 import logging
 import pathlib
-import subprocess
 import threading
 import zmq
 
@@ -34,10 +33,57 @@ class Station(object):
         )
         self.thr_rc.start()
 
+    def daq_record_data(
+        self,
+        num_events=1,
+        trigger_channels=[],
+        trigger_threshold=1.05,
+        trigger_coincidence=1,
+        force_trigger=False,
+        force_trigger_interval=1,
+    ):
+        if num_events <= 0:
+            self.logger.error("Infinite recording not supported.")
+            return
+        mask = 0
+        for ch in trigger_channels:
+            mask |= 1 << ch
+        cmd = [
+            self.station_conf["daq"]["radiant-try-event_executable"],
+            "-N",
+            f"{num_events}",
+            "-M",
+            f"{mask}",
+            "-T",
+            f"{trigger_threshold}",
+            "-C",
+            f"{trigger_coincidence}",
+        ]
+        if force_trigger:
+            cmd += ["-f", "-I", f"{force_trigger_interval}"]
+        self.acq_proc = stationrc.common.Executor(
+            cmd=cmd,
+            logger=self.logger,
+        )
+        self.acq_proc.wait()
+
+        data = {"WAVEFORM": []}
+        waveforms = stationrc.common.RNOGDataFile(
+            self.station_conf["daq"]["radiant-try-event_wfs_file"]
+        )
+        while True:
+            packet = waveforms.get_next_packet()
+            if packet == None:
+                break
+            packet["radiant_waveforms"] = packet["radiant_waveforms"].tolist()
+            packet["lt_waveforms"] = packet["lt_waveforms"].tolist()
+            data["WAVEFORM"].append(packet)
+        return {"data": data}
+
     def daq_run_start(self):
         data_dir = self.get_data_dir()
         self.acq_proc = stationrc.common.Executor(
-            cmd="/rno-g/bin/rno-g-acq", logger=self.logger
+            cmd=self.station_conf["daq"]["rno-g-acq_executable"], logger=self.logger
         )
         return {"data_dir": str(data_dir)}
 
