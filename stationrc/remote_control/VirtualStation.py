@@ -73,7 +73,7 @@ class VirtualStation(object):
         return self._send_command("radiant-board", "calSelect", {"quad": quad})
 
     def radiant_read_register(self, name):
-        return self._send_command("radiant-board", "readReg", name)
+        return self._send_command("radiant-board", "readReg", {"name": name})
 
     def radiant_setup(self):
         return self._send_command("station", "radiant_setup")
