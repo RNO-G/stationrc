@@ -24,7 +24,7 @@ data = station.daq_record_data(num_events=args.num_events, force_trigger=True)
 
 for ev in data["data"]["WAVEFORM"]:
     fig = plt.figure()
-    ax = plt.subplot()
+    ax = fig.subplots()
     for ch, wvf in enumerate(ev["radiant_waveforms"]):
         ax.plot(wvf, label=f"ch. {ch}")
     ax.legend()
