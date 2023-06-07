@@ -17,9 +17,9 @@ class VirtualStation(object):
 
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REQ)
-        self.socket.connect(
-            f'tcp://{self.station_conf["remote_control"]["host"]}:{self.station_conf["remote_control"]["port"]}'
-        )
+        socket = f'tcp://{self.station_conf["remote_control"]["host"]}:{self.station_conf["remote_control"]["port"]}'
+        self.logger.debug(f'Connect to socket: "{socket}".')
+        self.socket.connect(socket)
 
     def daq_record_data(
         self,
@@ -29,6 +29,7 @@ class VirtualStation(object):
         trigger_coincidence=1,
         force_trigger=False,
         force_trigger_interval=1,
+        use_uart=False
     ):
         return self._send_command(
             "station",
@@ -40,6 +41,7 @@ class VirtualStation(object):
                 "trigger_coincidence": trigger_coincidence,
                 "force_trigger": force_trigger,
                 "force_trigger_interval": force_trigger_interval,
+                "use_uart": use_uart
             },
         )
 

@@ -41,6 +41,7 @@ class Station(object):
         trigger_coincidence=1,
         force_trigger=False,
         force_trigger_interval=1,
+        use_uart=False
     ):
         if num_events <= 0:
             self.logger.error("Infinite recording not supported.")
@@ -61,6 +62,10 @@ class Station(object):
         ]
         if force_trigger:
             cmd += ["-f", "-I", f"{force_trigger_interval}"]
+            
+        if use_uart:
+            cmd += ["-u"]
+  
         self.acq_proc = stationrc.common.Executor(
             cmd=cmd,
             logger=self.logger,
