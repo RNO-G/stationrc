@@ -16,9 +16,24 @@ Install the Python packages for zeroMQ (communication to control PC) and libconf
 
 The file `stationrc/bbb/conf/station.conf` stores some low-level configuration parameters. No changes should be needed here.
 
-`stationrc.py` is the leight-weight demon to run on the BBB. It also replaces the `controller-console` script to control the station. By default, it listens for commands on IP port 8000.
+`stationrc.py` is the leight-weight demon to run on the BBB. It also replaces the `controller-console` script to control the station. By default, it listens for commands on IP port 8000. You can execute it with `python3 stationrc.py`, and it will start listening to commands from the Control PC.
+
+If you get an error like
+
+```
+Traceback (most recent call last):
+  File "stationrc.py", line 8, in <module>
+    station = stationrc.bbb.Station()
+  File "/home/rno-g/stationrc/stationrc/bbb/Station.py", line 27, in __init__
+    self.radiant_board = stationrc.radiant.RADIANT(
+AttributeError: module 'stationrc.radiant' has no attribute 'RADIANT'
+```
+
+probably you have not properly pulled the git submodule in `stationrc/radiant/`. Did you run `git submodule update --recursive --remote` in the repository?
 
 ## On the Control PC
+
+Install the same packages as on the BBB
 
 The file `stationrc/remote_control/conf/virtual_station.conf` stores configuration parameters for connecting to the BBB and paths to data and tools. You need to update it your configuration before running any of the examples.
 
