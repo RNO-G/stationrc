@@ -19,7 +19,7 @@ parser.add_argument(
     "-q",
     "--quad",
     type=int,
-    choices=[0, 1, 2, 3, 4, 5],
+    choices=[0, 1, 2],
     default=0,
     help="quad to connect to the signal generator",
 )
