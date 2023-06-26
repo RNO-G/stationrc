@@ -1,8 +1,20 @@
 # stationrc - Remote control of RNO-G stations
 
-The `stationrc` Python library must be available on both, the Beagle Bone Black and the control PC.
+`stationrc` is a Python framework to control RNO-G stations, i.e. configure them and take data using a unified interface on a control PC without the need to log into the Beagle Bone Black and interact with all the different scripts and executables there. It is mainly developed as basis for the [radiant-test](https://github.com/RNO-G/radiant-test) repository for production testing of new RADIANT boards but might also be helpful for station calibration and characterization in the lab.
 
-`VirtualStation.py` is the abstract station interface on the control PC that normal users and the testing framework will interact with. `Station.py` is the realization of the interface running on the Beagle Bone Black.
+The `stationrc` Python library must be available on both, the Beagle Bone Black and the control PC. `stationrc` pulls in the stationrc branch of the [radiant-python](https://github.com/RNO-G/radiant-python/tree/stationrc) as git submodule, so when cloning to your local machine you need to run
+
+```
+git clone git@github.com:RNO-G/stationrc.git
+git submodule init
+git submodule update
+```
+
+`VirtualStation.py` is the abstract station interface on the control PC that normal users and the testing framework will interact with. `VirtualStation.py` is not complete and is always extended with more functionality as needed.
+
+`Run.py`: uses `rno-g-acq` on the BBB to acquire data. Runs are configured via a [RunConfig](https://github.com/RNO-G/stationrc/blob/main/stationrc/remote_control/RunConfig.py) object and data are automtically moved to the Control PC and rootified using mattak.
+
+`Station.py` is the realization of the interface running on the Beagle Bone Black.
 
 The file `stationrc/common/conf/logging.conf` configures the Python logging system. It is currently configured to print *all* messages to the screen. Later, it can easily be adapted to log e.g. `DEBUG` messages only to (rotating) log files.
 
