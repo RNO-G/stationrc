@@ -41,7 +41,8 @@ class Station(object):
         trigger_coincidence=1,
         force_trigger=False,
         force_trigger_interval=1,
-        use_uart=False
+        use_uart=False,
+        read_header=False
     ):
         if num_events <= 0:
             self.logger.error("Infinite recording not supported.")
@@ -74,8 +75,8 @@ class Station(object):
 
         data = {"WAVEFORM": []}
         waveforms = stationrc.common.RNOGDataFile(
-            self.station_conf["daq"]["radiant-try-event_wfs_file"]
-        )
+            self.station_conf["daq"]["radiant-try-event_wfs_file"])
+        
         while True:
             packet = waveforms.get_next_packet()
             if packet == None:
@@ -83,13 +84,24 @@ class Station(object):
             packet["radiant_waveforms"] = packet["radiant_waveforms"].tolist()
             packet["lt_waveforms"] = packet["lt_waveforms"].tolist()
             data["WAVEFORM"].append(packet)
+            
+        if read_header:
+            headers = stationrc.common.RNOGDataFile(
+                self.station_conf["daq"]["radiant-try-event_hdr_file"])
+            
+            while True:
+                packet = headers.get_next_packet()
+                if packet == None:
+                    break
+                data["HEADER"].append(packet)
+
         return {"data": data}
 
     def daq_run_start(self):
         data_dir = self.get_data_dir()
         self.acq_proc = stationrc.common.Executor(
-            cmd=self.station_conf["daq"]["rno-g-acq_executable"], logger=self.logger
-        )
+            cmd=self.station_conf["daq"]["rno-g-acq_executable"], logger=self.logger)
+        
         return {"data_dir": str(data_dir)}
 
     def daq_run_terminate(self):

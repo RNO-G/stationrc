@@ -29,7 +29,8 @@ class VirtualStation(object):
         trigger_coincidence=1,
         force_trigger=False,
         force_trigger_interval=1,
-        use_uart=False
+        use_uart=False,
+        read_header=False
     ):
         return self._send_command(
             "station",
@@ -41,7 +42,8 @@ class VirtualStation(object):
                 "trigger_coincidence": trigger_coincidence,
                 "force_trigger": force_trigger,
                 "force_trigger_interval": force_trigger_interval,
-                "use_uart": use_uart
+                "use_uart": use_uart,
+                "read_header": read_header
             },
         )
 

@@ -5,6 +5,7 @@
 		"radiant_board_dev": "/dev/ttyRadiant",
 		"radiant-try-event_executable": "/home/rno-g/librno-g/build/test/radiant-try-event",
 		"radiant-try-event_wfs_file": "/data/test/wfs.dat",
+		"radiant-try-event_hdr_file": "/data/test/header.dat",
 		"rno-g-acq_executable": "/rno-g/bin/rno-g-acq",
 		"run_conf": "/rno-g/cfg/acq.cfg"
 	},

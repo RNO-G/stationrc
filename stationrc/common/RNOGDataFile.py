@@ -42,18 +42,24 @@ class RNOGDataFile(RawDataFile):
 
     def read_packet(self, type, version):
         version = f"v{version}"
+        
         if not type in self.data_format:
             raise ValueError(f"Packet type {type} not supported.")
+        
         if not version in self.data_format[type]:
             raise ValueError(f"{type} packet version {version} not supported.")
+        
         data = {"type": type}
         for field in self.data_format[type][version]:
+
             if len(field) == 2:
                 fcn = getattr(self, f"read_{field[1]}")
                 data[field[0]] = fcn()
+            
             elif len(field) == 3:
                 fcn = getattr(self, f"multiread_{field[1]}")
                 shape = list()
+                
                 for n in field[2]:
                     if isinstance(n, str):
                         if n.startswith("$"):
@@ -64,13 +70,16 @@ class RNOGDataFile(RawDataFile):
                         shape.append(n)
                     else:
                         raise ValueError(f"Bad data format: {field}.")
+                
                 length = 1
                 for n in shape:
                     length *= n
+                
                 arr = np.asarray(fcn(length), dtype=getattr(np, field[1]))
                 data[field[0]] = arr.reshape(shape)
             else:
                 raise ValueError(f"Bad data format: {field}.")
+
         return data
 
     def read_rno_g_calpulser_info(self):
@@ -84,3 +93,9 @@ class RNOGDataFile(RawDataFile):
 
     def read_rno_g_radiant_voltages(self):
         return self.read_packet("RNO-G_RADIANT_VOLTAGES", version=0)
+
+    def read_rno_g_lt_simple_trigger_config(self):
+        return self.read_packet("rno_g_lt_simple_trigger_config", version=0)
+
+    def read_rno_g_radiant_trigger_config(self):
+        return self.read_packet("rno_g_radiant_trigger_config", version=0)
