@@ -89,6 +89,8 @@ class Station(object):
             headers = stationrc.common.RNOGDataFile(
                 self.station_conf["daq"]["radiant-try-event_hdr_file"])
             
+            data["HEADER"] = []
+            
             while True:
                 packet = headers.get_next_packet()
                 if packet == None:
