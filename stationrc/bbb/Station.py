@@ -95,6 +95,11 @@ class Station(object):
                 packet = headers.get_next_packet()
                 if packet == None:
                     break
+                
+                packet["radiant_start_windows"] = packet["radiant_start_windows"].tolist()
+                packet["simple_trig_conf"]["_bitfield_stuff"] = packet["simple_trig_conf"]["_bitfield_stuff"].tolist()
+                packet["trig_conf"]["_bitfield_stuff"] = packet["trig_conf"]["_bitfield_stuff"].tolist()
+
                 data["HEADER"].append(packet)
 
         return {"data": data}
