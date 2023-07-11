@@ -22,6 +22,8 @@ class PacketType(enum.Enum):
 class RNOGDataFile(RawDataFile):
     RNO_G_NUM_LT_CHANNELS = 4
     RNO_G_NUM_RADIANT_CHANNELS = 24
+    RNO_G_LAB4D_NSAMPLES = 4096
+    RNO_G_PEDESTAL_NSAMPLES = RNO_G_LAB4D_NSAMPLES
 
     def __init__(self, filename):
         super(RNOGDataFile, self).__init__(filename)

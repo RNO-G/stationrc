@@ -299,6 +299,47 @@
                 [19]
             ]
         ]
+    },
+    "PEDESTAL": {
+        "v3": [
+            [
+                "when",
+                "uint32"
+            ],
+            [
+                "nevents",
+                "uint32"
+            ],
+            [
+                "mask",
+                "uint32"
+            ],
+            [
+                "_bitfield_stuff",
+                "uint8"
+            ],
+            [
+                "flags",
+                "uint8"
+            ],
+            [
+                "vbias",
+                "int16",
+                [2]
+            ],
+            [
+                "pedestals",
+                "uint16",
+                ["RNO_G_NUM_RADIANT_CHANNELS", "RNO_G_PEDESTAL_NSAMPLES"]
+            ],
+            [
+                "station",
+                "uint8"
+            ],
+            [
+                "run",
+                "int32"
+            ]
+        ]
     }
-
 }

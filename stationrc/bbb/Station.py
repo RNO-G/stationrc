@@ -42,7 +42,8 @@ class Station(object):
         force_trigger=False,
         force_trigger_interval=1,
         use_uart=False,
-        read_header=False
+        read_header=False,
+        read_pedestal=False,
     ):
         if num_events <= 0:
             self.logger.error("Infinite recording not supported.")
@@ -101,6 +102,22 @@ class Station(object):
                 packet["trig_conf"]["_bitfield_stuff"] = packet["trig_conf"]["_bitfield_stuff"].tolist()
 
                 data["HEADER"].append(packet)
+
+        if read_pedestal:
+            pedestals = stationrc.common.RNOGDataFile(
+                self.station_conf["daq"]["radiant-try-event_ped_file"])
+
+            data["PEDESTAL"] = list()
+
+            while True:
+                packet = pedestals.get_next_packet()
+                if packet == None:
+                    break
+
+                packet["vbias"] = packet["vbias"].tolist()
+                packet["pedestals"] = packet["pedestals"].tolist()
+
+                data["PEDESTAL"].append(packet)
 
         return {"data": data}
 
