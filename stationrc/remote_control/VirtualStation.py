@@ -78,6 +78,16 @@ class VirtualStation(object):
     def radiant_calselect(self, quad):
         return self._send_command("radiant-board", "calSelect", {"quad": quad})
 
+    def radiant_pedestal_get(self):
+        return self._send_command("radiant-calib", "getPedestals", {"asList": True})
+
+    def radiant_pedestal_set(self, value):
+        self._send_command("radiant-board", "pedestal", {"val": value})
+        self.radiant_pedestal_update()
+
+    def radiant_pedestal_update(self):
+        self._send_command("radiant-calib", "updatePedestals")
+
     def radiant_read_register(self, name):
         return self._send_command("radiant-board", "readReg", {"name": name})
 
