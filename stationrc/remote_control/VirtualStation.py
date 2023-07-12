@@ -82,6 +82,12 @@ class VirtualStation(object):
         return self._send_command("radiant-calib", "getPedestals", {"asList": True})
 
     def radiant_pedestal_set(self, value):
+        PEDESTAL_VALUE_MIN = 0
+        PEDESTAL_VALUE_MAX = 3000  # Corresponds to a DC offset of 3000 / 4096 * 3.3V = 2.42V (max. input voltage for the LAB4D is 2.5V)
+        if value < PEDESTAL_VALUE_MIN or value > PEDESTAL_VALUE_MAX:
+            self.logger.error(f"Only accepting pedestals of {PEDESTAL_VALUE_MIN} <= value <= {PEDESTAL_VALUE_MAX}. Doing nothing.")
+            return
+
         self._send_command("radiant-board", "pedestal", {"val": value})
         self.radiant_pedestal_update()
 
