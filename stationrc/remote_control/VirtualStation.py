@@ -75,8 +75,70 @@ class VirtualStation(object):
     def get_radiant_board_id(self):
         return self._send_command("radiant-board", "identify")
 
+    def radiant_calibration_specifics_get(self, channel):
+        # the original dictionary uses int as keys which do not pass through the JSON sender
+        data = self._send_command("radiant-calib", "lab4_specifics", {"lab": channel})
+        res = dict()
+        for key in data.keys():
+            res[int(key)] = data[key]
+        return res
+
+    def radiant_calibration_specifics_set(self, channel, key, value):
+        self._send_command("radiant-calib", "lab4_specifics_set", {"lab": channel, "key": key, "value": value})
+
+    def radiant_calram_mode(self, mode):
+        self._send_command("radiant-calram", "mode_str", {"mode": mode.value})
+
+    def radiant_calram_num_rolls(self):
+        return self._send_command("radiant-calram", "numRolls")
+
+    def radiant_calram_zero(self, zerocross_only=False):
+        self._send_command("radiant-calram", "zero", {"zerocrossOnly": zerocross_only})
+
     def radiant_calselect(self, quad):
         return self._send_command("radiant-board", "calSelect", {"quad": quad})
+
+    def radiant_dma_base(self):
+        return self._send_command("radiant-dma", "get_base")
+
+    def radiant_dma_begin(self):
+        self._send_command("radiant-dma", "beginDMA")
+
+    def radiant_dma_disable(self):
+        self._send_command("radiant-dma", "enable", {"onoff": False})
+
+    def radiant_dma_enable(self, mode=0):
+        self._send_command("radiant-dma", "enable", {"onoff": True, "mode": mode})
+
+    def radiant_dma_read(self, length):
+        return self._send_command("radiant-dma", "dmaread", {"length": length})
+
+    def radiant_dma_set_descriptor(self, channel, address, length, increment=False, final=True):
+        self._send_command("radiant-dma", "setDescriptor", {"num": channel, "addr": address, "length": length, "increment": increment, "final": final})
+
+    def radiant_lab4d_controller_force_trigger(self, block=False, num_trig=1, safe=True):
+        return self._send_command("radiant-labc", "force_trigger", {"block": block, "numTrig": num_trig, "safe": safe})
+
+    def radiant_lab4d_controller_scan_width(self, scan_num, trials=1):
+        return self._send_command("radiant-labc", "scan_width", {"scanNum": scan_num, "trials": trials})
+
+    def radiant_lab4d_controller_start(self):
+        self._send_command("radiant-labc", "start")
+
+    def radiant_lab4d_controller_stop(self):
+        self._send_command("radiant-labc", "stop")
+
+    def radiant_lab4d_controller_tmon_set(self, channel, value):
+        self._send_command("radiant-labc", "set_tmon", {"lab": channel, "value": value})
+
+    def radiant_lab4d_controller_update(self, channel):
+        self._send_command("radiant-labc", "update", {"lab4": channel})
+
+    def radiant_lab4d_controller_write_register(self, channel, address, value, verbose=False):
+        self._send_command("radiant-labc", "l4reg", {"lab": channel, "addr": address, "value": value, "verbose": verbose})
+
+    def radiant_monselect(self, channel):
+        self._send_command("radiant-board", "monSelect", {"lab": channel})
 
     def radiant_pedestal_get(self):
         return self._send_command("radiant-calib", "getPedestals", {"asList": True})

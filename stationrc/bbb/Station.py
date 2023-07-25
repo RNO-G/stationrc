@@ -179,11 +179,17 @@ class Station(object):
                 res = self.controller_board.run_command(message["cmd"])
                 socket.send_json({"status": "OK", "data": res})
 
-            elif message["device"] in ["radiant-board", "radiant-calib", "radiant-sig-gen", "station"]:
+            elif message["device"] in ["radiant-board", "radiant-calib", "radiant-calram", "radiant-dma", "radiant-labc", "radiant-sig-gen", "station"]:
                 if message["device"] == "radiant-board":
                     dev = self.radiant_board
                 elif message["device"] == "radiant-calib":
                     dev = self.radiant_board.calib
+                elif message["device"] == "radiant-calram":
+                    dev = self.radiant_board.calram
+                elif message["device"] == "radiant-dma":
+                    dev = self.radiant_board.dma
+                elif message["device"] == "radiant-labc":
+                    dev = self.radiant_board.labc
                 elif message["device"] == "radiant-sig-gen":
                     dev = self.radiant_board.radsig
                 elif message["device"] == "station":
