@@ -86,6 +86,9 @@ class VirtualStation(object):
     def radiant_calibration_specifics_set(self, channel, key, value):
         self._send_command("radiant-calib", "lab4_specifics_set", {"lab": channel, "key": key, "value": value})
 
+    def radiant_calram_base(self):
+        return self._send_command("radiant-calram", "get_base")
+
     def radiant_calram_mode(self, mode):
         self._send_command("radiant-calram", "mode_str", {"mode": mode.value})
 
