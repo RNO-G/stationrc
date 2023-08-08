@@ -64,10 +64,10 @@ class Station(object):
         ]
         if force_trigger:
             cmd += ["-f", "-I", f"{force_trigger_interval}"]
-            
+
         if use_uart:
             cmd += ["-u"]
-  
+
         self.acq_proc = stationrc.common.Executor(
             cmd=cmd,
             logger=self.logger,
@@ -76,8 +76,9 @@ class Station(object):
 
         data = {"WAVEFORM": []}
         waveforms = stationrc.common.RNOGDataFile(
-            self.station_conf["daq"]["radiant-try-event_wfs_file"])
-        
+            self.station_conf["daq"]["radiant-try-event_wfs_file"]
+        )
+
         while True:
             packet = waveforms.get_next_packet()
             if packet == None:
@@ -85,27 +86,35 @@ class Station(object):
             packet["radiant_waveforms"] = packet["radiant_waveforms"].tolist()
             packet["lt_waveforms"] = packet["lt_waveforms"].tolist()
             data["WAVEFORM"].append(packet)
-            
+
         if read_header:
             headers = stationrc.common.RNOGDataFile(
-                self.station_conf["daq"]["radiant-try-event_hdr_file"])
-            
+                self.station_conf["daq"]["radiant-try-event_hdr_file"]
+            )
+
             data["HEADER"] = []
-            
+
             while True:
                 packet = headers.get_next_packet()
                 if packet == None:
                     break
-                
-                packet["radiant_start_windows"] = packet["radiant_start_windows"].tolist()
-                packet["simple_trig_conf"]["_bitfield_stuff"] = packet["simple_trig_conf"]["_bitfield_stuff"].tolist()
-                packet["trig_conf"]["_bitfield_stuff"] = packet["trig_conf"]["_bitfield_stuff"].tolist()
+
+                packet["radiant_start_windows"] = packet[
+                    "radiant_start_windows"
+                ].tolist()
+                packet["simple_trig_conf"]["_bitfield_stuff"] = packet[
+                    "simple_trig_conf"
+                ]["_bitfield_stuff"].tolist()
+                packet["trig_conf"]["_bitfield_stuff"] = packet["trig_conf"][
+                    "_bitfield_stuff"
+                ].tolist()
 
                 data["HEADER"].append(packet)
 
         if read_pedestal:
             pedestals = stationrc.common.RNOGDataFile(
-                self.station_conf["daq"]["radiant-try-event_ped_file"])
+                self.station_conf["daq"]["radiant-try-event_ped_file"]
+            )
 
             data["PEDESTAL"] = list()
 
@@ -124,8 +133,9 @@ class Station(object):
     def daq_run_start(self):
         data_dir = self.get_data_dir()
         self.acq_proc = stationrc.common.Executor(
-            cmd=self.station_conf["daq"]["rno-g-acq_executable"], logger=self.logger)
-        
+            cmd=self.station_conf["daq"]["rno-g-acq_executable"], logger=self.logger
+        )
+
         return {"data_dir": str(data_dir)}
 
     def daq_run_terminate(self):
@@ -179,7 +189,15 @@ class Station(object):
                 res = self.controller_board.run_command(message["cmd"])
                 socket.send_json({"status": "OK", "data": res})
 
-            elif message["device"] in ["radiant-board", "radiant-calib", "radiant-calram", "radiant-dma", "radiant-labc", "radiant-sig-gen", "station"]:
+            elif message["device"] in [
+                "radiant-board",
+                "radiant-calib",
+                "radiant-calram",
+                "radiant-dma",
+                "radiant-labc",
+                "radiant-sig-gen",
+                "station",
+            ]:
                 if message["device"] == "radiant-board":
                     dev = self.radiant_board
                 elif message["device"] == "radiant-calib":

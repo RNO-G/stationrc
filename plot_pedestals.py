@@ -1,5 +1,8 @@
 import signal
-signal.signal(signal.SIGINT, signal.SIG_DFL)  # allows to close matplotlib window with CTRL+C from terminal
+
+signal.signal(
+    signal.SIGINT, signal.SIG_DFL
+)  # allows to close matplotlib window with CTRL+C from terminal
 
 import argparse
 import matplotlib.pyplot as plt

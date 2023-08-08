@@ -15,8 +15,13 @@ class VirtualStation(object):
             pathlib.Path(__file__).parent / "conf/virtual_station_conf.json", "r"
         ) as f:
             self.station_conf = json.load(f)
-        self.rc = RemoteControl(self.station_conf["remote_control"]["host"], self.station_conf["remote_control"]["port"])
-        self.radiant_low_level_interface = RADIANTLowLevelInterface(remote_control=self.rc)
+        self.rc = RemoteControl(
+            self.station_conf["remote_control"]["host"],
+            self.station_conf["remote_control"]["port"],
+        )
+        self.radiant_low_level_interface = RADIANTLowLevelInterface(
+            remote_control=self.rc
+        )
 
     def daq_record_data(
         self,
@@ -79,7 +84,9 @@ class VirtualStation(object):
         PEDESTAL_VALUE_MIN = 0
         PEDESTAL_VALUE_MAX = 3000  # Corresponds to a DC offset of 3000 / 4096 * 3.3V = 2.42V (max. input voltage for the LAB4D is 2.5V)
         if value < PEDESTAL_VALUE_MIN or value > PEDESTAL_VALUE_MAX:
-            self.logger.error(f"Only accepting pedestals of {PEDESTAL_VALUE_MIN} <= value <= {PEDESTAL_VALUE_MAX}. Doing nothing.")
+            self.logger.error(
+                f"Only accepting pedestals of {PEDESTAL_VALUE_MIN} <= value <= {PEDESTAL_VALUE_MAX}. Doing nothing."
+            )
             return
 
         self.rc.send_command("radiant-board", "pedestal", {"val": value})
@@ -92,7 +99,9 @@ class VirtualStation(object):
         return self.rc.send_command("station", "radiant_setup")
 
     def radiant_sig_gen_configure(self, pulse=False, band=0):
-        self.rc.send_command("radiant-sig-gen", "signal", {"pulse": pulse, "band": band})
+        self.rc.send_command(
+            "radiant-sig-gen", "signal", {"pulse": pulse, "band": band}
+        )
 
     def radiant_sig_gen_off(self):
         self.rc.send_command("radiant-sig-gen", "enable", {"onoff": False})

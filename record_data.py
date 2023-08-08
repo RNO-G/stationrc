@@ -1,5 +1,8 @@
 import signal
-signal.signal(signal.SIGINT, signal.SIG_DFL)  # allows to close matplotlib window with CTRL+C from terminal
+
+signal.signal(
+    signal.SIGINT, signal.SIG_DFL
+)  # allows to close matplotlib window with CTRL+C from terminal
 
 import argparse
 import matplotlib.pyplot as plt
@@ -26,14 +29,21 @@ parser.add_argument(
     help="Plot certain channel. If None plot all channels. (Default: None)",
 )
 
-parser.add_argument('-u', "--use_UART", action="store_true", help="Use UART, not GPIO to check for events")
+parser.add_argument(
+    "-u",
+    "--use_UART",
+    action="store_true",
+    help="Use UART, not GPIO to check for events",
+)
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
 
 station = stationrc.remote_control.VirtualStation()
 
-data = station.daq_record_data(num_events=args.num_events, force_trigger=True, use_uart=args.use_UART)
+data = station.daq_record_data(
+    num_events=args.num_events, force_trigger=True, use_uart=args.use_UART
+)
 
 for ev in data["data"]["WAVEFORM"]:
     fig = plt.figure()
@@ -43,7 +53,7 @@ for ev in data["data"]["WAVEFORM"]:
             ax.plot(wvf, label=f"ch. {ch}")
     else:
         ax.plot(ev["radiant_waveforms"][args.channel], label=f"ch. {args.channel}")
-        
+
     ax.legend()
     ax.set_title(f"Event: {ev['event_number']}")
     ax.set_xlabel("Sample")
