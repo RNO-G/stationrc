@@ -20,7 +20,6 @@ parser.add_argument(
     default=1,
     help="number of events to record",
 )
-
 parser.add_argument(
     "-c",
     "--channel",
@@ -28,7 +27,6 @@ parser.add_argument(
     default=None,
     help="Plot certain channel. If None plot all channels. (Default: None)",
 )
-
 parser.add_argument(
     "-u",
     "--use_UART",

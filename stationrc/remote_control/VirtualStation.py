@@ -35,7 +35,7 @@ class VirtualStation(object):
         read_header=False,
         read_pedestal=False,
     ):
-        return self._send_command(
+        return self.rc.send_command(
             "station",
             "daq_record_data",
             {
@@ -72,10 +72,13 @@ class VirtualStation(object):
         return res
 
     def get_radiant_board_dna(self):
-        return int(self.rc.send_command("radiant-board", "dna"))
+        return self.radiant_low_level_interface.dna()
 
     def get_radiant_board_id(self):
         return self.rc.send_command("radiant-board", "identify")
+
+    def radiant_calselect(self, quad):
+        return self.rc.send_command("radiant-board", "calSelect", {"quad": quad})
 
     def radiant_pedestal_get(self):
         return self.rc.send_command("radiant-calib", "getPedestals", {"asList": True})

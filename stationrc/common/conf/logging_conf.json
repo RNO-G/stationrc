@@ -20,9 +20,12 @@
 		},
 		"RADIANT": {
 			"level": "DEBUG"
-		},		
+		},
+		"RemoteControl": {
+			"level": "INFO"
+		},
 		"Station": {
-			"level": "DEBUG"
+			"level": "INFO"
 		},
 		"VirtualStation": {
 			"level": "DEBUG"			

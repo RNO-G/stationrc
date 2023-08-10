@@ -12,5 +12,5 @@ stationrc.common.setup_logging()
 
 station = stationrc.remote_control.VirtualStation()
 
-data = station._send_command("controller-board", args.command)
+data = station.rc.send_command("controller-board", args.command)
 print(data)
