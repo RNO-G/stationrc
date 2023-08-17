@@ -17,4 +17,5 @@ run.run_conf.flower_device_required(False)
 run.run_conf.flower_trigger_enable(False)
 run.run_conf.run_length(60)  # 60 second run length
 run.run_conf.comment("Test run steered from daq_run.py")
-run.start(delete_src=True, rootify=True)
+data_dir = run.start(delete_src=True, rootify=True)
+print(f"Data copied to '{data_dir}'.")
