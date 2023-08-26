@@ -4,11 +4,50 @@ import pathlib
 
 
 class RADIANTLowLevelInterface(object):
+    BOARD_MANAGER_BASE_ADDRESS = 0x400000
     NUM_CHANNELS = 24
+    NUM_QUADS = 6
 
     def __init__(self, remote_control):
         self.logger = logging.getLogger("RADIANTLowLevelInterface")
         self.rc = remote_control
+
+    def board_manager_status(self):
+        value = self.read_register("BM_STATUS")
+        res = dict()
+        res["FPGA_DONE"] = bool(value & (0x1 << 0))
+        res["MGTDET"] = bool(value & (0x1 << 1))
+        res["SD_DETECT"] = bool(value & (0x1 << 2))
+        res["POWER_GOOD_1V0"] = bool(value & (0x1 << 3))
+        res["POWER_GOOD_1V8"] = bool(value & (0x1 << 4))
+        res["POWER_GOOD_2V5"] = bool(value & (0x1 << 5))
+        res["POWER_GOOD_2V6"] = bool(value & (0x1 << 6))
+        res["POWER_GOOD_3V1"] = bool(value & (0x1 << 7))
+        return res
+
+    def board_manager_uptime(self):
+        time_low = self.read_register(self.BOARD_MANAGER_BASE_ADDRESS + 0xE8)
+        time_high = self.read_register(self.BOARD_MANAGER_BASE_ADDRESS + 0xEC)
+        return (time_high << 32) + time_low
+
+    def board_manager_voltage_readback(self):
+        res = dict()
+        res["VOLTAGE_1V0"] = (
+            self.read_register(self.BOARD_MANAGER_BASE_ADDRESS + 0x10) / 65535 * 3.3
+        )
+        res["VOLTAGE_1V8"] = (
+            self.read_register(self.BOARD_MANAGER_BASE_ADDRESS + 0x14) / 65535 * 3.3
+        )
+        res["VOLTAGE_2V5"] = (
+            self.read_register(self.BOARD_MANAGER_BASE_ADDRESS + 0x18) / 65535 * 3.3
+        )
+        res["VOLTAGE_2V6"] = (
+            self.read_register(self.BOARD_MANAGER_BASE_ADDRESS + 0x1C) / 65535 * 3.3
+        )
+        res["VOLTAGE_3V1"] = (
+            self.read_register(self.BOARD_MANAGER_BASE_ADDRESS + 0x20) / 65535 * 3.3
+        )
+        return res
 
     def calibration_load(self):
         filename = f"cal_{self.dna():016x}.json"
@@ -138,5 +177,41 @@ class RADIANTLowLevelInterface(object):
     def monselect(self, channel):
         self.rc.send_command("radiant-board", "monSelect", {"lab": channel})
 
-    def read_register(self, name):
-        return self.rc.send_command("radiant-board", "readReg", {"name": name})
+    def pedestal_voltage_get(self):
+        res = dict()
+        res["VPEDLEFT"] = (
+            self.read_register(self.BOARD_MANAGER_BASE_ADDRESS + 0xE0) / 4095 * 3.3
+        )
+        res["VPEDRIGHT"] = (
+            self.read_register(self.BOARD_MANAGER_BASE_ADDRESS + 0xE4) / 4095 * 3.3
+        )
+        return res
+
+    def quad_gpio_get(self, quad):
+        if quad < 0 or quad > self.NUM_QUADS - 1:
+            raise ValueError(f"No quad {quad}")
+
+        value = self.read_register(self.BOARD_MANAGER_BASE_ADDRESS + 0x40 + 4 * quad)
+        res = dict()
+        res["SEL_CAL"] = bool(value & (0x1 << 0))
+        res["ATT_LE"] = bool(value & (0x1 << 1))
+        res["BIST"] = bool(value & (0x1 << 2))
+        res["LED_GREEN"] = bool(value & (0x1 << 3))
+        res["TRIG_EN"] = bool(value & (0x1 << 4))
+        res["LAB_EN"] = bool(value & (0x1 << 5))
+        res["DIP_SWITCH_BIT0"] = bool(value & (0x1 << 6))
+        res["DIP_SWITCH_BIT1"] = bool(value & (0x1 << 7))
+        return res
+
+    def read_register(self, addr):
+        return self.rc.send_command("radiant-board", "readReg", {"addr": addr})
+
+    def trigger_diode_bias_get(self, channel):
+        if channel < 0 or channel > self.NUM_CHANNELS - 1:
+            raise ValueError(f"No channel {channel}")
+
+        return (
+            self.read_register(self.BOARD_MANAGER_BASE_ADDRESS + 0x80 + 4 * channel)
+            / 4095
+            * 2.0
+        )
