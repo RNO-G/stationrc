@@ -115,11 +115,6 @@ class VirtualStation(object):
     def radiant_sig_gen_set_frequency(self, frequency):
         self.rc.send_command("radiant-sig-gen", "setFrequency", {"freq": frequency})
 
-    def radiant_tune_initial(self, reset=False, mask=0xFFFFFF):
-        return self.rc.send_command(
-            "station", "radiant_tune_initial", {"reset": reset, "mask": mask}
-        )
-
     def retrieve_data(self, src, delete_src=False):
         cmd = ["rsync", "--archive", "--compress", "--verbose", "--stats"]
         if delete_src:
