@@ -14,7 +14,13 @@ stationrc.common.setup_logging()
 
 station = stationrc.remote_control.VirtualStation()
 
+print(f"RADIANT Revision: {station.radiant_revision()}")
+
+print(f"MCU UID: {station.get_radiant_board_mcu_uid():032x}")
+
 print(f"DNA: {station.get_radiant_board_dna():016x}")
+
+print(f"Sample rate: {station.radiant_sample_rate()} MHz")
 
 board_manager_id = stationrc.radiant.register_to_string(
     station.radiant_low_level_interface.read_register("BM_ID")

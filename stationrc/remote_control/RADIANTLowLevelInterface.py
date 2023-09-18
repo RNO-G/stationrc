@@ -25,6 +25,13 @@ class RADIANTLowLevelInterface(object):
         res["POWER_GOOD_3V1"] = bool(value & (0x1 << 7))
         return res
 
+    def board_manager_uid(self):
+        res = self.read_register(self.BOARD_MANAGER_BASE_ADDRESS + 0x30)
+        res += self.read_register(self.BOARD_MANAGER_BASE_ADDRESS + 0x34) << 32
+        res += self.read_register(self.BOARD_MANAGER_BASE_ADDRESS + 0x38) << 64
+        res += self.read_register(self.BOARD_MANAGER_BASE_ADDRESS + 0x3C) << 96
+        return res
+
     def board_manager_uptime(self):
         time_low = self.read_register(self.BOARD_MANAGER_BASE_ADDRESS + 0xE8)
         time_high = self.read_register(self.BOARD_MANAGER_BASE_ADDRESS + 0xEC)

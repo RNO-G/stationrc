@@ -77,6 +77,9 @@ class VirtualStation(object):
     def get_radiant_board_id(self):
         return self.rc.send_command("radiant-board", "identify")
 
+    def get_radiant_board_mcu_uid(self):
+        return self.radiant_low_level_interface.board_manager_uid()
+
     def radiant_calselect(self, quad):
         return self.rc.send_command("radiant-board", "calSelect", {"quad": quad})
 
@@ -97,6 +100,16 @@ class VirtualStation(object):
 
     def radiant_pedestal_update(self):
         self.rc.send_command("radiant-calib", "updatePedestals")
+
+    def radiant_revision(self):
+        return self.radiant_low_level_interface.read_register(
+            self.radiant_low_level_interface.BOARD_MANAGER_BASE_ADDRESS + 0x5C
+        )
+
+    def radiant_sample_rate(self):
+        return self.radiant_low_level_interface.read_register(
+            self.radiant_low_level_interface.BOARD_MANAGER_BASE_ADDRESS + 0xF0
+        )
 
     def radiant_setup(self):
         return self.rc.send_command("station", "radiant_setup")
