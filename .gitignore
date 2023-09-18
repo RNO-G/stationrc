@@ -1,6 +1,8 @@
 # Manual entries
-*png
-
+*.png
+# RADIANT calibration and pedestals
+cal_*.json
+peds_*.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
