@@ -178,7 +178,7 @@ def initial_tune(station, channel, frequency=510, max_tries=50):
         logging.error("Initial tune failed! Restored initial state.")
         return False
 
-    station.radiant_calselect(channel // 4)
+    station.radiant_calselect(quad=channel // 4)  # This works because within calSelect quad is normalized with: quad = quad % 3
     station.radiant_sig_gen_off()
     station.radiant_sig_gen_configure(pulse=False, band=(2 if frequency > 100 else 0))
     station.radiant_pedestal_update()
@@ -309,6 +309,7 @@ def initial_tune(station, channel, frequency=510, max_tries=50):
         seamSample = t[channel][0]
         slowSample = t[channel][127]
         curTry += 1
+    
     logging.info(
         f"Ending seam sample : {t[channel][0]} feedback {station.radiant_low_level_interface.calibration_specifics_get(channel)[seamTuneNum]} using register {seamTuneNum}"
     )

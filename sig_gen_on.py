@@ -23,6 +23,17 @@ parser.add_argument(
     default=0,
     help="quad to connect to the signal generator",
 )
+
+parser.add_argument(
+    "-b",
+    "--band",
+    type=int,
+    choices=[0, 1, 2, 3],
+    default=None,
+    help="Select filter band. 0: 5-100 MHz, 1: 100-300 MHz, 2: 300-600 MHz, 3: 600+ MHz. "
+         "If None (default) select band based on given frequency",
+)
+
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
@@ -35,13 +46,16 @@ station = stationrc.remote_control.VirtualStation()
 # 2 : 300-600 MHz
 # 3 : 600 MHz+
 # The pulse path doesn't go through the band filter, so 'band' for it doesn't matter.
-band = 0
-if args.frequency > 100:
-    band = 1
-if args.frequency > 300:
-    band = 2
-if args.frequency > 600:
-    band = 3
+if args.band is None:
+    band = 0
+    if args.frequency > 100:
+        band = 1
+    if args.frequency > 300:
+        band = 2
+    if args.frequency > 600:
+        band = 3
+else:
+    band = args.band
 
 station.radiant_sig_gen_off()
 station.radiant_sig_gen_configure(pulse=args.pulse, band=band)

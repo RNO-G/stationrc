@@ -10,7 +10,7 @@ class RemoteControl(object):
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REQ)
         socket = f"tcp://{host}:{port}"
-        self.logger.debug(f"Connect to socket: '{socket}'.")
+        self.logger.info(f"Connect to socket: '{socket}'.")
         self.socket.connect(socket)
 
     def send_command(self, device, cmd, data=None):
