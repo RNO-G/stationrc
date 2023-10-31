@@ -143,6 +143,11 @@ class RADIANTLowLevelInterface(object):
             "radiant-labc", "automatch_phab", {"lab": channel, "match": match}
         )
 
+    def lab4d_controller_autotune_vadjp(self, channel, initial=2700):
+        return self.rc.send_command(
+            "radiant-labc", "autotune_vadjp", {"lab": channel, "initial": initial}
+        )
+
     def lab4d_controller_default(self, channel, initial=True):
         self.rc.send_command(
             "radiant-labc", "default", {"lab4": channel, "initial": initial}

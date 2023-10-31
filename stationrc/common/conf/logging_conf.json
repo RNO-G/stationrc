@@ -16,10 +16,10 @@
 	},
 	"loggers": {
 		"ControllerBoard": {
-			"level": "DEBUG"
+			"level": "INFO"
 		},
 		"RADIANT": {
-			"level": "DEBUG"
+			"level": "INFO"
 		},
 		"RemoteControl": {
 			"level": "INFO"
@@ -28,7 +28,7 @@
 			"level": "INFO"
 		},
 		"VirtualStation": {
-			"level": "DEBUG"			
+			"level": "INFO"
 		},
 		"matplotlib.font_manager": {
 			"level": "WARNING"

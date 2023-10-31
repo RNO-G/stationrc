@@ -108,10 +108,15 @@ def get_time_run(station, frequency, trigs_per_roll=4):
     return timeByWindow
 
 
-def initial_tune(station, channel, frequency=510, max_tries=50):
+def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False):
     TRY_REG_3_FOR_FAILED_DLL = True
 
-    logging.info(f"Tuning channel {channel}")
+    sample_rate = station.radiant_sample_rate()
+    nom_sample = 1 / sample_rate * 1e6
+    logging.info(
+        f"Tuning channel {channel}. Sample rate is {sample_rate} MHz (nominal sample length: {nom_sample:.2f} ps)"
+    )
+
     initial_state = station.radiant_low_level_interface.calibration_specifics_get(
         channel
     )
@@ -122,6 +127,15 @@ def initial_tune(station, channel, frequency=510, max_tries=50):
         logging.info("Defaults say to use the DLL")
         seamTuneNum = 11
 
+    station.radiant_low_level_interface.lab4d_controller_update(channel)
+    station.radiant_low_level_interface.calibration_specifics_set(
+        channel,
+        8,
+        station.radiant_low_level_interface.lab4d_controller_autotune_vadjp(
+            channel,
+            station.radiant_low_level_interface.calibration_specifics_get(channel)[8],
+        ),
+    )
     station.radiant_low_level_interface.lab4d_controller_update(channel)
     station.radiant_low_level_interface.monselect(channel)
     station.radiant_low_level_interface.lab4d_controller_tmon_set(
@@ -153,12 +167,18 @@ def initial_tune(station, channel, frequency=510, max_tries=50):
         logging.info("DLL is okay")
 
     curTry = 0
-    while width > 1000 and curTry < max_tries:
+    if sample_rate == 3200:
+        target_width = 1000
+    elif sample_rate == 2400:  # below 1000 for 3.2GHz, maybe 1000*1.33=1300 for 2.4GHz
+        target_width = 1300
+    else:
+        raise RuntimeError(f"Sample rate of {sample_rate} MHz is not supported")
+    while width > target_width and curTry < max_tries:
         newAvg = 0
+        current_state = station.radiant_low_level_interface.calibration_specifics_get(
+            channel
+        )
         for i in range(257, 383):
-            current_state = (
-                station.radiant_low_level_interface.calibration_specifics_get(channel)
-            )
             newval = current_state[i] + 25
             station.radiant_low_level_interface.calibration_specifics_set(
                 channel, i, newval
@@ -178,7 +198,9 @@ def initial_tune(station, channel, frequency=510, max_tries=50):
         logging.error("Initial tune failed! Restored initial state.")
         return False
 
-    station.radiant_calselect(quad=channel // 4)  # This works because within calSelect quad is normalized with: quad = quad % 3
+    station.radiant_calselect(
+        quad=channel // 4
+    )  # This works because within calSelect quad is normalized with: quad = quad % 3
     station.radiant_sig_gen_off()
     station.radiant_sig_gen_configure(pulse=False, band=(2 if frequency > 100 else 0))
     station.radiant_pedestal_update()
@@ -187,9 +209,9 @@ def initial_tune(station, channel, frequency=510, max_tries=50):
 
     t = get_time_run(station, frequency * 1e6)
     logging.info(f"Initial seam/slow sample timing: {t[channel][0]} {t[channel][127]}")
-    if np.sum(t[channel][1:128]) > 39900:
+    if np.sum(t[channel][1:128]) > nom_sample * 127.68:
         logging.warning(
-            f"Feedback LAB{channel} way off ({40000 - np.sum(t[channel][1:128])}): {t[channel][0]} -> {-1 * t[channel][0]}"
+            f"Feedback LAB{channel} way off ({nom_sample*128-np.sum(t[channel][1:128])}): {t[channel][0]} -> {-1 * t[channel][0]}"
         )
         t[channel][0] *= -1
     seamSample = t[channel][0]
@@ -199,13 +221,161 @@ def initial_tune(station, channel, frequency=510, max_tries=50):
         channel
     )
     oldavg = 0
-    for i in range(257, 383):
+    for i in range(257, 383):  # only changes the middle samples... hence not 128
         oldavg += current_state[i]
     oldavg /= 126
     logging.info(f"Starting average trim: {oldavg}")
 
     curTry = 0
-    while slowSample > 290 or seamSample > 350 or (seamSample < 290 and oldavg < 2400):
+    do_quit = False
+    if sample_rate == 2400:
+        seam_slow_factor = 1.03
+        seam_fast_factor = 0.97
+
+        slow_slow_factor = 1.01
+        slow_fast_factor = (
+            0.95  # confusing IK but it's slow sample. make is slightly fast
+        )
+
+        mean_slow_factor = 1.001  # 0.1% of 416.66 means this ends when the mean is ~0.4ps off of ideal. seam sample should close enough then.
+        mean_fast_factor = 0.999
+    elif sample_rate == 3200:  # help tuning a bit
+        seam_slow_factor = 1.06
+        seam_fast_factor = 0.94
+
+        slow_slow_factor = 1.03
+        slow_fast_factor = (
+            0.93  # confusing IK but it's slow sample. make is slightly fast
+        )
+
+        mean_slow_factor = 1.003  # 0.1% of 416.66 means this ends when the mean is ~0.4ps off of ideal. seam sample should close enough then.
+        mean_fast_factor = 0.997
+    else:
+        raise RuntimeError(f"Sample rate of {sample_rate} MHz is not supported")
+
+    slow_step = 10  # was 25
+
+    def adjust_seam(seamSample, mode="seam"):
+        # Build the delta. This is totally hacked together.
+        # Decrease if too fast, increase if too slow.
+        # Change by 3 if it's within 50, change by 7 if it's between 50-100,
+        # change by 15 otherwise. Convergence here is slow, but we're trying to
+        # avoid bouncing, and we're also trying to avoid the negative case.
+        diff = np.abs(seamSample - nom_sample)
+        s_diff = seamSample - nom_sample
+        if seamTuneNum == 3:
+            delta = 1
+        else:
+            delta = 1  # was 3, takes longer but oh well. better granularity when we're close
+            # seam tuning
+            if mode == "seam" and diff > 50:
+                delta += random.randint(1, 3)  # randomness back in
+            if mode == "seam" and diff > 100:
+                delta += random.randint(
+                    2, 6
+                )  # max step size of 10. don't want to jump past optimal point too much
+
+            # mean tuning. diff is sizably different from the seam diff
+            if mode == "mean" and diff > 0.3:
+                delta += 3
+            if mode == "mean" and diff > 0.6:
+                delta += 6
+
+            # switch signs of delta if using VadjN or if we need to change directions
+            if seamTuneNum == 3:
+                delta = -1 * delta
+            if mode == "seam" and s_diff < 0:
+                delta = -1 * delta
+            if mode == "mean" and s_diff > 0:
+                delta = -1 * delta
+
+        cur = station.radiant_low_level_interface.calibration_specifics_get(channel)[
+            seamTuneNum
+        ]
+        newVal = cur + delta
+        # if newVal < (self.nomSample*1.28):
+        #    print("hmm feedback got to small. let's try something random!")
+        #    newVal = random.randrange(800,1200)
+        #    time.sleep(2);
+        logging.info(
+            f"Seam sample: Feedback LAB{channel} ({seamSample:.2f}): {cur} -> {newVal} (register {seamTuneNum})"
+        )
+        station.radiant_low_level_interface.calibration_specifics_set(
+            channel, seamTuneNum, newVal
+        )
+
+    def adjust_slow(slowSample, slow_step):
+        if slowSample > (nom_sample * slow_slow_factor):
+            slow_step = np.abs(slow_step)
+            logging.info("Need to speed up slow sample")
+        elif slowSample < (nom_sample * slow_fast_factor):
+            slow_step *= -1
+            logging.info("Need to slow down slow sample")
+        current_state = station.radiant_low_level_interface.calibration_specifics_get(
+            channel
+        )
+        oldavg = 0
+        for i in range(257, 383):
+            old = current_state[i]
+            oldavg += old
+            station.radiant_low_level_interface.calibration_specifics_set(
+                channel,
+                i,
+                int(
+                    old + slow_step
+                ),  # Need to convert to int since might default to np.int64
+            )
+        oldavg = oldavg / 126
+        logging.info(
+            f"Slow sample: LAB{channel} ({slowSample:.2f}): {oldavg} -> {oldavg+slow_step}"
+        )
+        oldavg = oldavg + slow_step
+
+    last_seam = seamSample
+    meanSample = np.mean(t[channel][1:126])
+    while (
+        meanSample > nom_sample * mean_slow_factor
+        or meanSample < nom_sample * mean_fast_factor
+    ):
+        adjust_seam(meanSample, mode="mean")
+        station.radiant_low_level_interface.lab4d_controller_update(channel)
+
+        t = get_time_run(station, frequency * 1e6)
+        logging.info(
+            f"Seam/slow sample timing now: {t[channel][0]:.2f} {t[channel][127]:.2f}. Mean of middle sample timings now: {np.mean(t[channel][1:127]):.2f}"
+        )
+        meanSample = np.mean(t[channel][1:126])
+
+        if curTry == max_tries:
+            for key in initial_state.keys():
+                station.radiant_low_level_interface.calibration_specifics_set(
+                    channel, key, initial_state[key]
+                )
+            station.radiant_low_level_interface.lab4d_controller_update(channel)
+            logging.error("Initial tune failed! Restored initial state.")
+            return False
+        curTry += 1
+
+    t = get_time_run(station, frequency * 1e6)
+    seamSample = t[channel][0]
+    slowSample = t[channel][127]
+    bouncing = 0  # dumb way to check if we're boucing around the nominal range set by slow and fast factors. if it bounces then adjust slow, which is likely off, then continue with seam (mean)
+    tune_mode = "seam"  # default
+    if bad_lab == True:
+        tune_mode = "mean"
+        seam_slow_factor = mean_slow_factor
+        seam_fast_factor = mean_fast_factor
+        seamSample = np.mean(
+            t[channel][1:127]
+        )  # trick it to be the right thing. I should probably just pass both to adjust seam
+        logging.warning("Using the mean sample instead")
+
+    while (
+        slowSample < nom_sample * slow_fast_factor
+        or slowSample > nom_sample * slow_slow_factor
+        or seamSample > nom_sample * seam_slow_factor
+        or seamSample < nom_sample * seam_fast_factor
+    ):
         if curTry >= max_tries:
             for key in initial_state.keys():
                 station.radiant_low_level_interface.calibration_specifics_set(
@@ -214,43 +384,34 @@ def initial_tune(station, channel, frequency=510, max_tries=50):
             station.radiant_low_level_interface.lab4d_controller_update(channel)
             logging.error("Initial tune failed! Restored initial state.")
             return False
+
         # Fix the seam if it's gone off too much.
-        if seamSample < 290 or seamSample > 350:
-            # Build the delta. This is totally hacked together.
-            # Decrease if too fast, increase if too slow.
-            # Change by 3 if it's within 50, change by 7 if it's between 50-100,
-            # change by 15 otherwise. Convergence here is slow, but we're trying to
-            # avoid bouncing, and we're also trying to avoid the negative case.
-            diff = np.abs(seamSample - 312.5)
-            if seamTuneNum == 3:
-                delta = 1
-            else:
-                delta = 3
-                if diff > 50:
-                    delta += random.randint(2, 6)
-                if diff > 100:
-                    delta += random.randint(4, 12)
-                if seamSample < 290:
-                    delta *= -1
-                if seamTuneNum == 3:
-                    delta *= -1
-            cur = station.radiant_low_level_interface.calibration_specifics_get(
-                channel
-            )[seamTuneNum]
-            newVal = cur + delta
-            if newVal < 400:
-                logging.warning(
-                    "hmm feedback got to small. let's try something random!"
-                )
-                newVal = random.randrange(800, 1200)
-                time.sleep(2)
-            logging.debug(
-                f"Feedback LAB{channel} ({seamSample}): {cur} -> {newVal} (register {seamTuneNum})"
-            )
-            station.radiant_low_level_interface.calibration_specifics_set(
-                channel, seamTuneNum, newVal
-            )
-        elif slowSample > 290 and oldavg < 2400:
+        if (
+            seamSample < nom_sample * seam_fast_factor
+            or seamSample > nom_sample * seam_slow_factor
+        ) and bouncing < 3:
+            logging.info("----------- SEAM off ----------")
+            adjust_seam(seamSample, mode=tune_mode)
+            if (
+                last_seam > nom_sample * seam_slow_factor
+                and seamSample < nom_sample * seam_fast_factor
+            ):
+                bouncing += 1
+
+            elif (
+                last_seam < nom_sample * seam_fast_factor
+                and seamSample > nom_sample * seam_slow_factor
+            ):
+                bouncing += 1
+            last_seam = seamSample
+            if bouncing > 3:
+                logging.warning("Bouncing")
+        elif (
+            slowSample > nom_sample * slow_slow_factor
+            or slowSample < nom_sample * slow_fast_factor
+        ):
+            logging.info("----------- SLOW off ----------")
+
             # We ONLY DO THIS if the seam sample's close.
             # This is because the slow sample changes with the seam timing like
             # everything else (actually a little more)
@@ -263,57 +424,38 @@ def initial_tune(station, channel, frequency=510, max_tries=50):
             # Remember trim 127 is the slow sample, and trim 0 is the multichannel clock alignment trim.
 
             # Trim updating is a pain, sigh.
-            oldavg = 0
-            current_state = (
-                station.radiant_low_level_interface.calibration_specifics_get(channel)
-            )
-            for i in range(257, 383):
-                old = current_state[i]
-                oldavg += old
-                station.radiant_low_level_interface.calibration_specifics_set(
-                    channel, i, old + 25
-                )
-            oldavg /= 126
-            logging.debug(
-                f"Slowing early samples: LAB{channel} ({slowSample}): {oldavg} -> {oldavg + 25}"
-            )
-            oldavg += 25
-        elif slowSample < 250 and oldavg > 1800:
-            # Trim updating is a pain, sigh.
-            oldavg = 0
-            current_state = (
-                station.radiant_low_level_interface.calibration_specifics_get(channel)
-            )
-            for i in range(257, 383):
-                old = current_state[i]
-                oldavg += old
-                station.radiant_low_level_interface.calibration_specifics_set(
-                    channel, i, old - 25
-                )
-            oldavg /= 126
-            logging.debug(
-                f"Speeding early samples: LAB{channel} ({slowSample}): {oldavg} -> {oldavg - 25}"
-            )
-            oldavg -= 25
+            adjust_slow(slowSample, slow_step)
+            bouncing = 0
 
-        # now update
         station.radiant_low_level_interface.lab4d_controller_update(channel)
-        # fetch times again
+
         t = get_time_run(station, frequency * 1e6)
-        logging.debug(f"Seam/slow sample timing now: {t[channel][0]} {t[channel][127]}")
-        if np.sum(t[channel][1:128]) > 39900:
-            print(
-                f"Feedback LAB{channel} way off ({40000 - np.sum(t[channel][1:128])}): {t[channel][0]} -> {-1 * t[channel][0]}"
+        logging.info(
+            f"Seam/slow sample timing now: {t[channel][0]:.2f} {t[channel][127]:.2f}. Mean of middle sample timings now: {np.mean(t[channel][1:127]):.2f}"
+        )
+
+        if np.sum(t[channel][1:128]) > nom_sample * 127.68:
+            logging.warning(
+                f"Feedback LAB{channel} way off ({nom_sample*128-np.sum(t[channel][1:128]):.2f}): {t[channel][0]} -> {-1 * t[channel][0]:.2f}"
             )
             t[channel][0] *= -1
         seamSample = t[channel][0]
         slowSample = t[channel][127]
-        curTry += 1
-    
+
+        if tune_mode == "mean":
+            seamSample = np.mean(t[channel][1:127])  # trick it again :)
+        curTry = curTry + 1
+        if do_quit:
+            logging.warning("Quitting")
+            break
+
     logging.info(
-        f"Ending seam sample : {t[channel][0]} feedback {station.radiant_low_level_interface.calibration_specifics_get(channel)[seamTuneNum]} using register {seamTuneNum}"
+        f"Ending seam sample : {t[channel][0]:.2f} feedback {station.radiant_low_level_interface.calibration_specifics_get(channel)[seamTuneNum]} using register {seamTuneNum}"
     )
     logging.info(
-        f"Ending slow sample : {t[channel][127]} average earlier trims {oldavg}"
+        f"Ending slow sample : {t[channel][127]:.2f} average earlier trims {oldavg}"
     )
+
+    station.radiant_calselect(quad=None)
+    station.radiant_sig_gen_off()
     return True

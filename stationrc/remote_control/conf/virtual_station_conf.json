@@ -4,7 +4,7 @@
 		"mattak_directory": "/Users/tikarg/local/mattak"
 	},
 	"remote_control": {
-		"host": "rno-g-949.zeuthen.desy.de",
+		"host": "rno-bbb-02.zeuthen.desy.de",
 		"port": 8000,
 		"user": "rno-g"
 	}
