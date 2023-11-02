@@ -36,6 +36,14 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "-l",
+    "--line",
+    action="store_true",
+    help="Plot vertical lines each 128 samples",
+)
+
+
+parser.add_argument(
     "-r",
     "--range",
     type=int,
@@ -62,7 +70,8 @@ for ev in data["data"]["WAVEFORM"]:
             ax.plot(wvf, label=f"ch. {ch}")
     else:
         for channel in args.channel:
-            ax.plot(ev["radiant_waveforms"][channel], label=f"ch. {channel}")
+            print(ev["radiant_waveforms"][channel])
+            ax.plot(ev["radiant_waveforms"][channel], label=f"ch. {channel}", lw=1)
 
     if args.range is not None:
         if len(args.range) == 1:
@@ -72,6 +81,10 @@ for ev in data["data"]["WAVEFORM"]:
             ax.set_xlim(*args.range)
         else:
             raise ValueError("Wrong length for args.range (only 1 or 2 are allowed)")
+        
+    if args.line:
+        for i in range(16):
+            ax.axvline(i * 128, color="k", lw=1, zorder=0)
 
     ax.legend()
     ax.set_title(f"Event: {ev['event_number']}")
