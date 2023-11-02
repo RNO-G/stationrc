@@ -202,7 +202,7 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False):
         quad=channel // 4
     )  # This works because within calSelect quad is normalized with: quad = quad % 3
     station.radiant_sig_gen_off()
-    station.radiant_sig_gen_configure(pulse=False, band=(2 if frequency > 100 else 0))
+    station.radiant_sig_gen_select_band(frequency=frequency)
     station.radiant_pedestal_update()
     station.radiant_sig_gen_on()
     station.radiant_sig_gen_set_frequency(frequency)

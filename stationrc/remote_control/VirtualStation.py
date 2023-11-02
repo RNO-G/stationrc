@@ -125,6 +125,16 @@ class VirtualStation(object):
     def radiant_sig_gen_on(self):
         self.rc.send_command("radiant-sig-gen", "enable", {"onoff": True})
 
+    def radiant_sig_gen_select_band(self, frequency):
+        band = 0
+        if frequency > 100:
+            band = 1
+        if frequency > 300:
+            band = 2
+        if frequency > 600:
+            band = 3
+        self.radiant_sig_gen_configure(pulse=False, band=band)
+
     def radiant_sig_gen_set_frequency(self, frequency):
         self.rc.send_command("radiant-sig-gen", "setFrequency", {"freq": frequency})
 
