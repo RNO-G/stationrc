@@ -65,11 +65,23 @@ class VirtualStation(object):
 
         data = self.rc.send_command("controller-board", "#MONITOR")
         res = {"analog": {}, "power": {}, "temp": {}}
-        tokens = data.split()
-        res["analog"]["timestamp"] = int(tokens[4][:-1])
-        res["power"]["timestamp"] = int(tokens[26][:-1])
-        res["temp"]["timestamp"] = int(tokens[43][:-1])
-        return res
+
+        try:
+            # FS: This were random fixes I had to do to make be able to parse the string to json
+            data = data.replace("\", \"dh\":", ", \"dh\":")
+            data = data.replace("\n", "")
+            tokens = json.loads(data)
+                
+            if len(tokens):
+                res["analog"]["timestamp"] = tokens["when_analog"]
+                res["power"]["timestamp"] = tokens["when_power"]
+                res["temp"]["timestamp"] = tokens["when_temp"]
+                return res
+            
+            return None
+        except:
+            self.logger.error("Command \"#MONITOR\" returned no data (or can not be parsed)!") 
+            return None
 
     def get_radiant_board_dna(self):
         return self.radiant_low_level_interface.dna()
