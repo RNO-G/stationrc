@@ -15,6 +15,15 @@ parser.add_argument(
     help="channels for tuning",
 )
 parser.add_argument("--reset", action="store_true", help="reset LAB4Ds")
+
+parser.add_argument(
+    "-f",
+    "--frequency",
+    type=float,
+    default=510,
+    help="Specify tuning frequency. The band is choosen automatically. Default: 510 MHz",
+)
+
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
@@ -32,7 +41,7 @@ else:
 
 ok = dict()
 for ch in args.channel:
-    ok[ch] = stationrc.remote_control.initial_tune(station, ch)
+    ok[ch] = stationrc.remote_control.initial_tune(station, ch, args.frequency)
 
 station.radiant_low_level_interface.calibration_save()
 station.radiant_sig_gen_off()
