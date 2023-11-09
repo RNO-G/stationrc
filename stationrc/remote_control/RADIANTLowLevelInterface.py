@@ -58,7 +58,7 @@ class RADIANTLowLevelInterface(object):
 
     def calibration_load(self):
         filename = pathlib.Path(__file__).parent / ".." / ".." / "calib" / \
-            f"cal_{self.get_radiant_board_mcu_uid():032x}.json"
+            f"cal_{self.board_manager_uid():032x}.json"
             
         if not pathlib.Path(filename).exists():
             self.logger.warning(f"File '{filename}' does not exist. Doing nothing!")
@@ -77,7 +77,7 @@ class RADIANTLowLevelInterface(object):
             calib[ch] = self.calibration_specifics_get(ch)
         
         filename = pathlib.Path(__file__).parent / ".." / ".." / "calib" / \
-            f"cal_{self.get_radiant_board_mcu_uid():032x}.json"
+            f"cal_{self.board_manager_uid():032x}.json"
         
         with open(filename, "w") as f:
             json.dump(calib, f)
