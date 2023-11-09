@@ -151,7 +151,7 @@ def adjust_seam(seamSample, station, channel, nom_sample, seamTuneNum, mode="sea
     #    newVal = random.randrange(800,1200)
     #    time.sleep(2);
     logging.info(
-        f"Seam sample: Feedback LAB{channel} ({seamSample:.2f}): {cur} -> {newVal} (register {seamTuneNum})"
+        f"LAB{channel}: Seam {seamSample:.2f}, register {seamTuneNum} ({cur} -> {newVal})"
     )
     station.radiant_low_level_interface.calibration_specifics_set(
         channel, seamTuneNum, newVal
@@ -184,7 +184,7 @@ def adjust_slow(slowSample, slow_step, station, channel, nom_sample, slow_slow_f
     
     oldavg = oldavg / 126
     logging.info(
-        f"Slow sample: LAB{channel} ({slowSample:.2f}): {oldavg} -> {oldavg+slow_step}"
+        f"LAB{channel}: Slow {slowSample:.2f}, ({oldavg} -> {oldavg + slow_step})"
     )
     return oldavg + slow_step
 
@@ -193,13 +193,13 @@ def update_seam_and_slow(station, channel, frequency, tune_mode, nom_sample):
 
     t = get_time_run(station, frequency * 1e6)
     logging.info(
-        f"Seam/slow sample timing now: {t[channel][0]:.2f} {t[channel][127]:.2f}. "
+        f"Seam/slow sample timing now: {t[channel][0]:.2f} ps {t[channel][127]:.2f} ps, total diff: {nom_sample * 127 - np.sum(t[channel][1:128]):.2f} ps. "
         f"Mean of middle sample timings now: {np.mean(t[channel][1:127]):.2f}"
     )
 
     if np.sum(t[channel][1:128]) > nom_sample * 127.68:
         logging.warning(
-            f"Feedback LAB{channel} way off ({nom_sample * 128 - np.sum(t[channel][1:128]):.2f}): "
+            f"Feedback LAB{channel} way off ({nom_sample * 127 - np.sum(t[channel][1:128]):.2f}): "
             f"{t[channel][0]} -> {-1 * t[channel][0]:.2f}"
         )
         t[channel][0] *= -1
@@ -453,7 +453,7 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False):
             # Remember trim 127 is the slow sample, and trim 0 is the multichannel clock alignment trim.
 
             # Trim updating is a pain, sigh.
-            oldavg = adjust_slow(slowSample, slow_step)
+            oldavg = adjust_slow(slowSample, slow_step, station, channel, nom_sample, slow_slow_factor, slow_fast_factor)
             bouncing = 0
 
         station.radiant_low_level_interface.lab4d_controller_update(channel)
@@ -467,12 +467,11 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False):
             break
 
     logging.info(
-        f"Ending seam sample : {t[channel][0]:.2f} feedback "
-        f"{station.radiant_low_level_interface.calibration_specifics_get(channel)[seamTuneNum]} "
-        f"using register {seamTuneNum}"
+        f"Ending seam sample: {t[channel][0]:.2f}, using register {seamTuneNum} with value "
+        f"{station.radiant_low_level_interface.calibration_specifics_get(channel)[seamTuneNum]}."
     )
     logging.info(
-        f"Ending slow sample : {t[channel][127]:.2f} average earlier trims {oldavg}"
+        f"Ending slow sample: {t[channel][127]:.2f}, average earlier trims {oldavg}"
     )
 
     station.radiant_calselect(quad=None)
