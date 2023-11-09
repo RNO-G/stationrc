@@ -57,13 +57,16 @@ class RADIANTLowLevelInterface(object):
         return res
 
     def calibration_load(self):
-        filename = f"cal_{self.dna():016x}.json"
+        filename = pathlib.Path(__file__).parent / ".." / ".." / "calib" / \
+            f"cal_{self.get_radiant_board_mcu_uid():032x}.json"
+            
         if not pathlib.Path(filename).exists():
             self.logger.warning(f"File '{filename}' does not exist. Doing nothing!")
             return
 
         with open(filename, "r") as f:
             calib = json.load(f)
+            
         for ch in calib.keys():
             for key in calib[ch].keys():
                 self.calibration_specifics_set(int(ch), int(key), calib[ch][key])
@@ -72,7 +75,11 @@ class RADIANTLowLevelInterface(object):
         calib = dict()
         for ch in range(self.NUM_CHANNELS):
             calib[ch] = self.calibration_specifics_get(ch)
-        with open(f"cal_{self.dna():016x}.json", "w") as f:
+        
+        filename = pathlib.Path(__file__).parent / ".." / ".." / "calib" / \
+            f"cal_{self.get_radiant_board_mcu_uid():032x}.json"
+        
+        with open(filename, "w") as f:
             json.dump(calib, f)
 
     def calibration_specifics_get(self, channel):
