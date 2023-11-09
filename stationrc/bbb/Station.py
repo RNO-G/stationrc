@@ -160,8 +160,8 @@ class Station(object):
             voltage_setting=voltage_setting,
         )
 
-    def radiant_setup(self):
-        stationrc.radiant.setup_radiant(self.radiant_board)
+    def radiant_setup(self, version="3"):
+        stationrc.radiant.setup_radiant(self.radiant_board, version)
 
     def radiant_tune_initial(self, reset=False, mask=0xFFFFFF):
         fail_mask = stationrc.radiant.tune_initial(
