@@ -123,7 +123,7 @@ class VirtualStation(object):
             self.radiant_low_level_interface.BOARD_MANAGER_BASE_ADDRESS + 0xF0
         )
 
-    def radiant_setup(self, version="3"):
+    def radiant_setup(self, version=3):
         return self.rc.send_command("station", "radiant_setup", {"version": version})
 
     def radiant_sig_gen_configure(self, pulse=False, band=0):

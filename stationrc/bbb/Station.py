@@ -24,9 +24,12 @@ class Station(object):
             uart_baudrate=self.station_conf["daq"]["controller_board_baudrate"],
         )
 
-        self.radiant_board = stationrc.radiant.RADIANT(
-            port=self.station_conf["daq"]["radiant_board_dev"]
+        # The RADIANT object will be created in setup_radiant().
+        # We need to ensure that the RADIANT is powered on to determine the revision and sampling rate
+        self.logger.warning(
+            "RADIANT object not initialized. Run bring_up.py before trying to access the RADIANT."
         )
+        self.radiant_board = None
 
         self.thr_rc = threading.Thread(
             target=Station._receive_remote_command, args=[self]
@@ -160,8 +163,8 @@ class Station(object):
             voltage_setting=voltage_setting,
         )
 
-    def radiant_setup(self, version="3"):
-        stationrc.radiant.setup_radiant(self.radiant_board, version)
+    def radiant_setup(self, version=3):
+        stationrc.radiant.setup_radiant(self, version)
 
     def radiant_tune_initial(self, reset=False, mask=0xFFFFFF):
         fail_mask = stationrc.radiant.tune_initial(
