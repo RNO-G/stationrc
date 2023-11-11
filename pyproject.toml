@@ -23,6 +23,9 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
+[tool.setuptools]
+packages = ["stationrc"]
+
 [tool.setuptools.package-data]
 "stationrc.bbb.conf" = ["*.json"]
 "stationrc.common.conf" = ["*.json"]
