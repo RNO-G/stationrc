@@ -61,27 +61,9 @@ class VirtualStation(object):
         self.rc.send_command("station", "daq_run_wait")
 
     def get_controller_board_monitoring(self):
-        # TODO: parse all fields in data
-
         data = self.rc.send_command("controller-board", "#MONITOR")
-        res = {"analog": {}, "power": {}, "temp": {}}
-
-        try:
-            # FS: This were random fixes I had to do to make be able to parse the string to json
-            data = data.replace("\", \"dh\":", ", \"dh\":")
-            data = data.replace("\n", "")
-            tokens = json.loads(data)
-                
-            if len(tokens):
-                res["analog"]["timestamp"] = tokens["when_analog"]
-                res["power"]["timestamp"] = tokens["when_power"]
-                res["temp"]["timestamp"] = tokens["when_temp"]
-                return res
-            
-            return None
-        except:
-            self.logger.error("Command \"#MONITOR\" returned no data (or can not be parsed)!") 
-            return None
+        res = json.loads(data)
+        return res
 
     def get_radiant_board_dna(self):
         return self.radiant_low_level_interface.dna()

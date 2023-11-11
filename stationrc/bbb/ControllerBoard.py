@@ -12,7 +12,7 @@ class ControllerBoard(object):
         self.do_run = True
         self.lock = threading.RLock()
         self.uart = serial.Serial(
-            port=uart_device, baudrate=uart_baudrate, timeout=0.1
+            port=uart_device, baudrate=uart_baudrate, timeout=0.25
         )  # TODO: optimize timeout for commands to return a result
 
         self.thr_bkg = threading.Thread(
