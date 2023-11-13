@@ -20,5 +20,5 @@ stationrc.common.setup_logging()
 station = stationrc.remote_control.VirtualStation()
 
 station.radiant_setup(version=args.version)
-with open(f"peds_{station.get_radiant_board_dna():016x}.json", "w") as f:
+with open(f"peds_{station.get_radiant_board_mcu_uid():032x}.json", "w") as f:
     json.dump(station.radiant_pedestal_get(), f)
