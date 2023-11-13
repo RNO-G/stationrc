@@ -56,6 +56,11 @@ class RADIANTLowLevelInterface(object):
         )
         return res
 
+    def calibration_load(self):
+        self.logger.info(f"Loading calibration for board {self.board_manager_uid():032x}")
+        self.rc.send_command(
+            "radiant-calib", "load", {"uid": self.board_manager_uid()})
+
     def calibration_load_from_local(self):
         filename = pathlib.Path(__file__).parent / ".." / ".." / "calib" / \
             f"cal_{self.board_manager_uid():032x}.json"
@@ -74,6 +79,7 @@ class RADIANTLowLevelInterface(object):
                 self.calibration_specifics_set(int(ch), int(key), calib[ch][key])
                 
     def calibration_save(self):
+        self.logger.info(f"Saving calibration for board {self.board_manager_uid():032x}")
         self.rc.send_command(
             "radiant-calib", "save", {"uid": self.board_manager_uid()})
 
@@ -89,10 +95,7 @@ class RADIANTLowLevelInterface(object):
         
         with open(filename, "w") as f:
             json.dump(calib, f)
-            
-    def calibration_load(self):
-        self.rc.send_command(
-            "radiant-calib", "load", {"uid": self.board_manager_uid()})
+
 
     def calibration_specifics_get(self, channel):
         # the original dictionary uses int as keys which do not pass through the JSON sender
