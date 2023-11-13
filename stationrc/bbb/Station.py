@@ -29,12 +29,20 @@ class Station(object):
         self.logger.warning(
             "RADIANT object not initialized. Run bring_up.py before trying to access the RADIANT."
         )
-        self.radiant_board = None
+        self._radiant_board = None
 
         self.thr_rc = threading.Thread(
             target=Station._receive_remote_command, args=[self]
         )
         self.thr_rc.start()
+    
+    @property
+    def radiant_board(self):
+        if self._radiant_board is None:
+            from stationrc.radiant.radiant import RADIANT
+            self._radiant_board = RADIANT(port=self.station_conf["daq"]["radiant_board_dev"])
+
+        return self._radiant_board
 
     def daq_record_data(
         self,
