@@ -18,6 +18,9 @@
 		"ControllerBoard": {
 			"level": "INFO"
 		},
+		"RADIANTLowLevelInterface": {
+			"level": "INFO"
+		},
 		"RADIANT": {
 			"level": "INFO"
 		},

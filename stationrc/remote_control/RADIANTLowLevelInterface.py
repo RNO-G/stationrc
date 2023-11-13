@@ -60,6 +60,8 @@ class RADIANTLowLevelInterface(object):
         filename = pathlib.Path(__file__).parent / ".." / ".." / "calib" / \
             f"cal_{self.board_manager_uid():032x}.json"
             
+        self.logger.info(f"Loading calibration: {filename}")
+            
         if not pathlib.Path(filename).exists():
             self.logger.warning(f"File '{filename}' does not exist. Doing nothing!")
             return
@@ -78,6 +80,8 @@ class RADIANTLowLevelInterface(object):
         
         filename = pathlib.Path(__file__).parent / ".." / ".." / "calib" / \
             f"cal_{self.board_manager_uid():032x}.json"
+            
+        self.logger.info(f"Saving calibration: {filename}")
         
         with open(filename, "w") as f:
             json.dump(calib, f)
