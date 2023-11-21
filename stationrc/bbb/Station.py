@@ -24,11 +24,7 @@ class Station(object):
             uart_baudrate=self.station_conf["daq"]["controller_board_baudrate"],
         )
 
-        # The RADIANT object will be created in setup_radiant().
-        # We need to ensure that the RADIANT is powered on to determine the revision and sampling rate
-        self.logger.warning(
-            "RADIANT object not initialized. Run bring_up.py before trying to access the RADIANT."
-        )
+        # radiant_board is implemented as property and with set _radiant_board the first time its called.
         self._radiant_board = None
 
         self.thr_rc = threading.Thread(
