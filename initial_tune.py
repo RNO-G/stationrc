@@ -24,6 +24,13 @@ parser.add_argument(
     help="Specify tuning frequency. The band is choosen automatically. Default: 510 MHz",
 )
 
+parser.add_argument(
+    "-e",
+    "--external",
+    action="store_true",
+    help="Use external signal",
+)
+
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
@@ -41,7 +48,7 @@ else:
 
 ok = dict()
 for ch in args.channel:
-    ok[ch] = stationrc.remote_control.initial_tune(station, ch, args.frequency)
+    ok[ch] = stationrc.remote_control.initial_tune(station, ch, args.frequency, external_signal=args.external)
 
 station.radiant_low_level_interface.calibration_save()
 station.radiant_sig_gen_off()

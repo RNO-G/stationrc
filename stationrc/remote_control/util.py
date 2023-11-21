@@ -212,7 +212,7 @@ def update_seam_and_slow(station, channel, frequency, tune_mode, nom_sample):
 
     return t, seamSample, slowSample
 
-def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False):
+def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, external_signal=False):
     TRY_REG_3_FOR_FAILED_DLL = True
 
     sample_rate = station.radiant_sample_rate()
@@ -305,14 +305,17 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False):
         logging.error("Initial tune failed! Restored initial state.")
         return False
 
-    station.radiant_calselect(
-        quad=channel // 4
-    )  # This works because within calSelect quad is normalized with: quad = quad % 3
-    station.radiant_sig_gen_off()
-    station.radiant_pedestal_update()
-    station.radiant_sig_gen_on()
-    station.radiant_sig_gen_select_band(frequency=frequency)
-    station.radiant_sig_gen_set_frequency(frequency)
+    if not external_signal:
+        station.radiant_calselect(
+            quad=channel // 4
+        )  # This works because within calSelect quad is normalized with: quad = quad % 3
+        station.radiant_sig_gen_off()
+        station.radiant_pedestal_update()
+        station.radiant_sig_gen_on()
+        station.radiant_sig_gen_select_band(frequency=frequency)
+        station.radiant_sig_gen_set_frequency(frequency)
+    else:
+        station.radiant_calselect(quad=None)
 
 
     t, seamSample, slowSample = update_seam_and_slow(station, channel, frequency, "seam", nom_sample)
