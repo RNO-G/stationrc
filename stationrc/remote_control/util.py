@@ -344,12 +344,12 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
         mean_fast_factor = 0.999
     
     elif sample_rate == 3200:  # help tuning a bit
-        seam_slow_factor = 1.06
-        seam_fast_factor = 0.94
+        seam_slow_factor = 1.12
+        seam_fast_factor = 0.92
 
-        slow_slow_factor = 1.03
+        slow_slow_factor = 1.02
         slow_fast_factor = (
-            0.93  # confusing IK but it's slow sample. make is slightly fast
+            0.8  # confusing IK but it's slow sample. make is slightly fast
         )
 
         mean_slow_factor = 1.003  # 0.1% of 416.66 means this ends when the mean is ~0.4ps off of ideal. seam sample should close enough then.
