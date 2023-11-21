@@ -42,7 +42,6 @@ parser.add_argument(
     help="Plot vertical lines each 128 samples",
 )
 
-
 parser.add_argument(
     "-r",
     "--range",
@@ -51,6 +50,13 @@ parser.add_argument(
     default=None,
     metavar="int or [int, int]",
     help="Set range (in samples) to plot. Single int: lenght to plot centered around the middle. Two ints: xlow, xup. Default: None -> full range",
+)
+
+parser.add_argument(
+    "-s",
+    "--save",
+    action="store_true",
+    help="Store plots"
 )
 
 args = parser.parse_args()
@@ -63,7 +69,10 @@ data = station.daq_record_data(
     num_events=args.num_events, force_trigger=True, use_uart=args.use_UART
 )
 
-for ev in data["data"]["WAVEFORM"]:
+if args.save:
+    uid = station.get_radiant_board_mcu_uid()
+
+for idx, ev in enumerate(data["data"]["WAVEFORM"]):
     fig, ax = plt.subplots()
     if args.channel is None:
         for ch, wvf in enumerate(ev["radiant_waveforms"]):
@@ -90,4 +99,9 @@ for ev in data["data"]["WAVEFORM"]:
     ax.set_title(f"Event: {ev['event_number']}")
     ax.set_xlabel("Sample")
     ax.set_ylabel("ADC counts")
-plt.show()
+    if args.save:
+        fig.tight_layout()
+        plt.savefig(f"waveform_ch{args.channel}_{idx}_{uid:032x}", transparent=False)
+    
+if not args.save:
+    plt.show()
