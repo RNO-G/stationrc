@@ -84,10 +84,10 @@ class VirtualStation(object):
         PEDESTAL_VALUE_MIN = 0
         PEDESTAL_VALUE_MAX = 3000  # Corresponds to a DC offset of 3000 / 4096 * 3.3V = 2.42V (max. input voltage for the LAB4D is 2.5V)
         if value < PEDESTAL_VALUE_MIN or value > PEDESTAL_VALUE_MAX:
-            self.logger.error(
-                f"Only accepting pedestals of {PEDESTAL_VALUE_MIN} <= value <= {PEDESTAL_VALUE_MAX}. Doing nothing."
-            )
-            return
+            err = (f"Only accepting pedestals of {PEDESTAL_VALUE_MIN} <= value <= "
+                   f"{PEDESTAL_VALUE_MAX}. Doing nothing.")
+            self.logger.error(err)
+            raise ValueError(err)
 
         self.rc.send_command("radiant-board", "pedestal", {"val": value})
         self.radiant_pedestal_update()
@@ -118,6 +118,7 @@ class VirtualStation(object):
 
     def radiant_sig_gen_on(self):
         self.rc.send_command("radiant-sig-gen", "enable", {"onoff": True})
+
 
     def radiant_sig_gen_select_band(self, frequency):
         band = 0
