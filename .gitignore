@@ -3,6 +3,9 @@
 # RADIANT calibration and pedestals
 cal_*.json
 peds_*.json
+*.zip
+# Allow to keep alternative config files
+stationrc/remote_control/conf/virtual_station_conf_*json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
