@@ -129,10 +129,12 @@ def adjust_seam(seamSample, station, channel, nom_sample, seamTuneNum, mode="sea
             )  # max step size of 10. don't want to jump past optimal point too much
 
         # mean tuning. diff is sizably different from the seam diff
-        if mode == "mean" and diff > 0.3:
+        if mode == "mean" and diff > 1:
             delta += 3
-        if mode == "mean" and diff > 0.6:
-            delta += 6
+        if mode == "mean" and diff > 2:
+            delta += 3
+        if mode == "mean" and diff > 3:
+            delta += 3
 
         # switch signs of delta if using VadjN or if we need to change directions
         if seamTuneNum == 3:
@@ -141,6 +143,7 @@ def adjust_seam(seamSample, station, channel, nom_sample, seamTuneNum, mode="sea
             delta = -1 * delta
         if mode == "mean" and s_diff > 0:
             delta = -1 * delta
+
 
     cur = station.radiant_low_level_interface.calibration_specifics_get(channel)[
         seamTuneNum
@@ -151,7 +154,7 @@ def adjust_seam(seamSample, station, channel, nom_sample, seamTuneNum, mode="sea
     #    newVal = random.randrange(800,1200)
     #    time.sleep(2);
     logging.info(
-        f"LAB{channel}: Seam {seamSample:.2f}, register {seamTuneNum} ({cur} -> {newVal})"
+        f"LAB{channel}: Seam {seamSample:.2f} (diff = {s_diff:.2f}), register {seamTuneNum} ({cur} -> {newVal})"
     )
     station.radiant_low_level_interface.calibration_specifics_set(
         channel, seamTuneNum, newVal
@@ -162,7 +165,13 @@ def adjust_slow(slowSample, slow_step, station, channel, nom_sample, slow_slow_f
     if slowSample > (nom_sample * slow_slow_factor):
         slow_step = np.abs(slow_step)
         logging.info(f"Need to speed up slow sample ({slow_step})")
+
+        # slow_step *= -1
+        # logging.info(f"Need to slow down slow sample ({slow_step})")
     elif slowSample < (nom_sample * slow_fast_factor):
+        # slow_step = np.abs(slow_step)
+        # logging.info(f"Need to speed up slow sample ({slow_step})")
+
         slow_step *= -1
         logging.info(f"Need to slow down slow sample ({slow_step})")
 
