@@ -205,7 +205,7 @@ def update_seam_and_slow(station, channel, frequency, tune_mode, nom_sample):
         f"Mean of middle sample timings now: {np.mean(t[channel][1:127]):.2f}"
     )
 
-    if np.sum(t[channel][1:128]) > nom_sample * 127.68:
+    if np.sum(t[channel][1:128]) > nom_sample * 127.68 and tune_mode != "mean":
         logging.warning(
             f"Feedback LAB{channel} way off ({nom_sample * 127 - np.sum(t[channel][1:128]):.2f}): "
             f"Flip seam sample {t[channel][0]:.2f} -> {-1 * t[channel][0]:.2f}"
@@ -385,7 +385,9 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
 
         curTry += 1
 
-    t, seamSample, slowSample = update_seam_and_slow(station, channel, frequency, "seam", nom_sample)
+    t = get_time_run(station, frequency * 1e6)
+    seamSample = t[channel][0]
+    slowSample = t[channel][127]
 
     # dumb way to check if we're boucing around the nominal range set by slow and fast factors.
     # If it bounces then adjust slow, which is likely off, then continue with seam (mean)
