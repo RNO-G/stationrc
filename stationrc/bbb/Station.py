@@ -31,7 +31,7 @@ class Station(object):
             target=Station._receive_remote_command, args=[self]
         )
         self.thr_rc.start()
-    
+
     @property
     def radiant_board(self):
         if self._radiant_board is None:
@@ -39,6 +39,9 @@ class Station(object):
             self._radiant_board = RADIANT(port=self.station_conf["daq"]["radiant_board_dev"])
 
         return self._radiant_board
+
+    def reset_radiant_board(self):
+        self._radiant_board = None
 
     def daq_record_data(
         self,

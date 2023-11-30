@@ -51,6 +51,9 @@ class VirtualStation(object):
             },
         )
 
+    def reset_radiant_board(self):
+        return self.rc.send_command("station", "reset_radiant_board")
+
     def daq_run_start(self):
         return self.rc.send_command("station", "daq_run_start")
 
