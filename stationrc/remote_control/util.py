@@ -200,7 +200,7 @@ def update_seam_and_slow(station, channel, frequency, tune_mode, nom_sample):
     if np.sum(t[channel][1:128]) > nom_sample * 127.68:
         logging.warning(
             f"Feedback LAB{channel} way off ({nom_sample * 127 - np.sum(t[channel][1:128]):.2f}): "
-            f"{t[channel][0]} -> {-1 * t[channel][0]:.2f}"
+            f"{t[channel][0]:.2f} -> {-1 * t[channel][0]:.2f}"
         )
         t[channel][0] *= -1
 
