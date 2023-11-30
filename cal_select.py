@@ -12,7 +12,7 @@ parser.add_argument(
     "--quad",
     type=int,
     choices=[0, 1, 2],
-    default=0,
+    default=None,
     help='Quad to connect to the signal generator:'
     "\n\t quad | channel ids"
     "\n\t ------------------"
