@@ -19,13 +19,31 @@ parser.add_argument(
     default=None,
     help="Plot certain channel. If None plot all channels. (Default: None)",
 )
+
+parser.add_argument(
+    "--no_update",
+    action="store_true",
+    help="If set, do not run updatePedestals()",
+)
+
+parser.add_argument(
+    "--reset",
+    action="store_true",
+    help="Reset radiant",
+)
+
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
 
 station = stationrc.remote_control.VirtualStation()
 
-station.radiant_pedestal_update()
+if args.reset:
+    station.reset_radiant_board()
+
+if not args.no_update:
+    station.radiant_pedestal_update()
+
 data = station.radiant_pedestal_get()
 
 fig = plt.figure()
