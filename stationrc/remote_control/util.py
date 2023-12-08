@@ -345,7 +345,7 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
     else:
         raise RuntimeError(f"Sample rate of {sample_rate} MHz is not supported")
 
-    slow_step = 10  # was 25
+    slow_step = 25  # was 25
 
     curTry = 0  # reset
 
