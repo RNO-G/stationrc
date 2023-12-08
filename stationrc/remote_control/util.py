@@ -366,15 +366,6 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
 
         t, meanSample, _ = update_seam_and_slow(station, channel, frequency, "mean", nom_sample)
 
-        if curTry == max_tries:
-            for key in initial_state.keys():
-                station.radiant_low_level_interface.calibration_specifics_set(
-                    channel, key, initial_state[key])
-
-            station.radiant_low_level_interface.lab4d_controller_update(channel)
-            logging.error("Initial tune failed! Restored initial state.")
-            return False
-
         curTry += 1
 
     t, seamSample, slowSample = update_seam_and_slow(station, channel, frequency, "seam", nom_sample)
