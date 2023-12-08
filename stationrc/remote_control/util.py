@@ -200,10 +200,10 @@ def update_seam_and_slow(station, channel, frequency, tune_mode, nom_sample):
         seamSample = np.mean(t[channel][1:127])  # trick it again :)
 
     logging.info(
-        f"Seam/slow sample timing now: {seamSample:.2f} ps {slowSample:.2f} ps, "
-        f"total diff: {nom_sample * 127 - np.sum(t[channel][1:128]):.2f} ps. "
-        f"Mean of middle sample timings now: {np.mean(t[channel][1:127]):.2f}"
-    )
+        f"Seam (mean) / slow sample timing now: {seamSample:.2f} / {slowSample:.2f} ps, "
+        f"total diff: {nom_sample * 127 - np.sum(t[channel][1:128]):.2f} ps. ")
+
+    logging.info(f"Mean of middle sample timings now: {np.mean(t[channel][1:127]):.2f}")
 
     if np.sum(t[channel][1:128]) > nom_sample * 127.68 and tune_mode != "mean":
         logging.warning(
@@ -362,7 +362,6 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
     slow_step = 10  # was 25
 
     curTry = 0  # reset
-    last_seam = seamSample
     meanSample = np.mean(t[channel][1:127])
     while (meanSample > nom_sample * mean_slow_factor
            or meanSample < nom_sample * mean_fast_factor):
@@ -370,12 +369,7 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
         adjust_seam(meanSample, station, channel, nom_sample, seamTuneNum, mode="mean")
         station.radiant_low_level_interface.lab4d_controller_update(channel)
 
-        t = get_time_run(station, frequency * 1e6)
-        logging.info(
-            f"Seam/slow sample timing now: {t[channel][0]:.2f} {t[channel][127]:.2f}. "
-            f"Mean of middle sample timings now: {np.mean(t[channel][1:127]):.2f}"
-        )
-        meanSample = np.mean(t[channel][1:127])
+        t, meanSample, _ = update_seam_and_slow(station, channel, frequency, "mean", nom_sample)
 
         if curTry == max_tries:
             for key in initial_state.keys():
@@ -388,9 +382,8 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
 
         curTry += 1
 
-    t = get_time_run(station, frequency * 1e6)
-    seamSample = t[channel][0]
-    slowSample = t[channel][127]
+    t, seamSample, slowSample = update_seam_and_slow(station, channel, frequency, "seam", nom_sample)
+    last_seam = seamSample
 
     # dumb way to check if we're boucing around the nominal range set by slow and fast factors.
     # If it bounces then adjust slow, which is likely off, then continue with seam (mean)
