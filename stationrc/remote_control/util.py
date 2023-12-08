@@ -384,6 +384,7 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
     # If it bounces then adjust slow, which is likely off, then continue with seam (mean)
     bouncing = 0
     tune_mode = "seam"  # default
+    curTry = 0  # reset
 
     if bad_lab == True:
         tune_mode = "mean"
