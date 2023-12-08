@@ -213,7 +213,7 @@ def update_seam_and_slow(station, channel, frequency, tune_mode, nom_sample):
         # seamSample *= -1
 
     return t, seamSample, slowSample
-    return t, seamSample, slowSample
+
 
 def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, external_signal=False):
     TRY_REG_3_FOR_FAILED_DLL = True
@@ -380,8 +380,8 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
         if curTry == max_tries:
             for key in initial_state.keys():
                 station.radiant_low_level_interface.calibration_specifics_set(
-                    channel, key, initial_state[key]
-                )
+                    channel, key, initial_state[key])
+
             station.radiant_low_level_interface.lab4d_controller_update(channel)
             logging.error("Initial tune failed! Restored initial state.")
             return False
@@ -401,9 +401,9 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
         tune_mode = "mean"
         seam_slow_factor = mean_slow_factor
         seam_fast_factor = mean_fast_factor
-        seamSample = np.mean(
-            t[channel][1:127]
-        )  # trick it to be the right thing. I should probably just pass both to adjust seam
+
+        # trick it to be the right thing. I should probably just pass both to adjust seam
+        seamSample = np.mean(t[channel][1:127])
         logging.warning("Using the mean sample instead")
 
     while (
@@ -428,6 +428,7 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
 
             logging.info("----------- SEAM off ----------")
             adjust_seam(seamSample, station, channel, nom_sample, seamTuneNum, mode=tune_mode)
+
             if (last_seam > nom_sample * seam_slow_factor
                     and seamSample < nom_sample * seam_fast_factor):
                 bouncing += 1
@@ -457,11 +458,11 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
             # Remember trim 127 is the slow sample, and trim 0 is the multichannel clock alignment trim.
 
             # Trim updating is a pain, sigh.
-            oldavg = adjust_slow(slowSample, slow_step, station, channel, nom_sample, slow_slow_factor, slow_fast_factor)
+            oldavg = adjust_slow(slowSample, slow_step, station, channel, nom_sample,
+                                 slow_slow_factor, slow_fast_factor)
             bouncing = 0
 
         station.radiant_low_level_interface.lab4d_controller_update(channel)
-
         t, seamSample, slowSample = update_seam_and_slow(station, channel, frequency, tune_mode, nom_sample)
 
         curTry += 1
