@@ -43,6 +43,16 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "-m",
+    "--marker",
+    type=str,
+    default="",
+    const="o",
+    nargs="?",
+    help="Set marker",
+)
+
+parser.add_argument(
     "-r",
     "--range",
     type=int,
@@ -76,11 +86,11 @@ for idx, ev in enumerate(data["data"]["WAVEFORM"]):
     fig, ax = plt.subplots()
     if args.channel is None:
         for ch, wvf in enumerate(ev["radiant_waveforms"]):
-            ax.plot(wvf, label=f"ch. {ch}")
+            ax.plot(wvf, marker=args.marker, label=f"ch. {ch}")
     else:
         for channel in args.channel:
             print(ev["radiant_waveforms"][channel])
-            ax.plot(ev["radiant_waveforms"][channel], label=f"ch. {channel}", lw=1)
+            ax.plot(ev["radiant_waveforms"][channel], marker=args.marker, label=f"ch. {channel}", lw=1)
 
     if args.range is not None:
         if len(args.range) == 1:
@@ -90,7 +100,7 @@ for idx, ev in enumerate(data["data"]["WAVEFORM"]):
             ax.set_xlim(*args.range)
         else:
             raise ValueError("Wrong length for args.range (only 1 or 2 are allowed)")
-        
+
     if args.line:
         for i in range(16):
             ax.axvline(i * 128, color="k", lw=1, zorder=0)
@@ -102,6 +112,6 @@ for idx, ev in enumerate(data["data"]["WAVEFORM"]):
     if args.save:
         fig.tight_layout()
         plt.savefig(f"waveform_ch{args.channel}_{idx}_{uid:032x}", transparent=False)
-    
+
 if not args.save:
     plt.show()
