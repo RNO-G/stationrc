@@ -329,7 +329,7 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
     )
 
     # only changes the middle samples... hence not 128
-    oldavg = np.mean(current_state[257:383])
+    oldavg = np.sum([current_state[i] for i in range(257, 383)]) / 126  # current_state is a dict
     logging.info(f"Starting average trim: {oldavg}")
 
     do_quit = False
