@@ -15,6 +15,7 @@ parser.add_argument(
     help="channels for tuning",
 )
 parser.add_argument("--reset", action="store_true", help="reset LAB4Ds")
+parser.add_argument("--reset_radiant", action="store_true", help="Reset Radiant")
 
 parser.add_argument(
     "-f",
@@ -37,6 +38,9 @@ stationrc.common.setup_logging()
 
 station = stationrc.remote_control.VirtualStation()
 
+if args.reset_radiant:
+    station.reset_radiant_board()
+
 if args.reset:
     for ch in args.channel:
         station.radiant_low_level_interface.calibration_specifics_reset(ch)
@@ -45,6 +49,8 @@ if args.reset:
         station.radiant_low_level_interface.lab4d_controller_automatch_phab(ch)
 else:
     station.radiant_low_level_interface.calibration_load()
+
+
 
 ok = dict()
 for ch in args.channel:
