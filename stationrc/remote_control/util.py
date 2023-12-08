@@ -207,10 +207,10 @@ def update_seam_and_slow(station, channel, frequency, tune_mode, nom_sample):
 
     if np.sum(t[channel][1:128]) > nom_sample * 127.68 and tune_mode != "mean":
         logging.warning(
-            f"Feedback LAB{channel} way off ({nom_sample * 127 - np.sum(t[channel][1:128]):.2f}), "
-            f"flip seam sample: {seamSample:.2f} -> {-1 * seamSample:.2f}"
-        )
-        seamSample *= -1
+            f"Feedback LAB{channel} way off ({nom_sample * 127 - np.sum(t[channel][1:128]):.2f})")
+        # FS: After talking to Ryan which could not make sense of this flip neither and suggested to remove
+        # it I am commenting it but keeping the warning.
+        # seamSample *= -1
 
     return t, seamSample, slowSample
     return t, seamSample, slowSample
