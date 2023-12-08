@@ -332,7 +332,6 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
     oldavg = np.sum([current_state[i] for i in range(257, 383)]) / 126  # current_state is a dict
     logging.info(f"Starting average trim: {oldavg}")
 
-    do_quit = False
     if sample_rate == 2400:
         seam_slow_factor = 1.03
         seam_fast_factor = 0.97
@@ -466,10 +465,6 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
         t, seamSample, slowSample = update_seam_and_slow(station, channel, frequency, tune_mode, nom_sample)
 
         curTry += 1
-
-        if do_quit:
-            logging.warning("Quitting")
-            break
 
     logging.info(
         f"Ending seam sample: {t[channel][0]:.2f}, using register {seamTuneNum} with value "
