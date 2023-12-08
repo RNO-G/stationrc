@@ -142,20 +142,17 @@ def adjust_seam(seamSample, station, channel, nom_sample, seamTuneNum, mode="sea
         if mode == "mean" and s_diff > 0:
             delta = -1 * delta
 
-    cur = station.radiant_low_level_interface.calibration_specifics_get(channel)[
-        seamTuneNum
-    ]
+    cur = station.radiant_low_level_interface.calibration_specifics_get(channel)[seamTuneNum]
     newVal = cur + delta
     # if newVal < (self.nomSample*1.28):
     #    print("hmm feedback got to small. let's try something random!")
     #    newVal = random.randrange(800,1200)
     #    time.sleep(2);
     logging.info(
-        f"LAB{channel}: Seam {seamSample:.2f}, register {seamTuneNum} ({cur} -> {newVal})"
-    )
+        f"LAB{channel}: Seam {seamSample:.2f}, register {seamTuneNum} ({cur} -> {newVal})")
+
     station.radiant_low_level_interface.calibration_specifics_set(
-        channel, seamTuneNum, newVal
-    )
+        channel, seamTuneNum, newVal)
 
 
 def adjust_slow(slowSample, slow_step, station, channel, nom_sample, slow_slow_factor, slow_fast_factor):
@@ -166,26 +163,18 @@ def adjust_slow(slowSample, slow_step, station, channel, nom_sample, slow_slow_f
         slow_step *= -1
         logging.info("Need to slow down slow sample")
 
-    current_state = station.radiant_low_level_interface.calibration_specifics_get(
-        channel
-    )
+    current_state = station.radiant_low_level_interface.calibration_specifics_get(channel)
 
     oldavg = 0
     for i in range(257, 383):
         old = current_state[i]
         oldavg += old
         station.radiant_low_level_interface.calibration_specifics_set(
-            channel,
-            i,
-            int(
-                old + slow_step
-            ),  # Need to convert to int since might default to np.int64
-        )
+            channel, i, int(old + slow_step))  # Need to convert to int since might default to np.int64
 
     oldavg = oldavg / 126
-    logging.info(
-        f"LAB{channel}: Slow {slowSample:.2f}, ({oldavg} -> {oldavg + slow_step})"
-    )
+    logging.info(f"LAB{channel}: Slow {slowSample:.2f}, ({oldavg} -> {oldavg + slow_step})")
+
     return oldavg + slow_step
 
 
@@ -282,16 +271,13 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
 
     while width > target_width and curTry < max_tries:
         newAvg = 0
-        current_state = station.radiant_low_level_interface.calibration_specifics_get(
-            channel
-        )
+        current_state = station.radiant_low_level_interface.calibration_specifics_get(channel)
 
         # register range to address the samples, only changes the middle samples... hence not 128
         for i in range(257, 383):
             newval = current_state[i] + 25
             station.radiant_low_level_interface.calibration_specifics_set(
-                channel, i, newval
-            )
+                channel, i, newval)
             newAvg += newval
 
         station.radiant_low_level_interface.lab4d_controller_update(channel)
@@ -322,11 +308,7 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
         station.radiant_calselect(quad=None)
 
 
-    t, seamSample, slowSample = update_seam_and_slow(station, channel, frequency, "seam", nom_sample)
-
-    current_state = station.radiant_low_level_interface.calibration_specifics_get(
-        channel
-    )
+    current_state = station.radiant_low_level_interface.calibration_specifics_get(channel)
 
     # only changes the middle samples... hence not 128
     oldavg = np.sum([current_state[i] for i in range(257, 383)]) / 126  # current_state is a dict
@@ -362,7 +344,12 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
     slow_step = 10  # was 25
 
     curTry = 0  # reset
-    meanSample = np.mean(t[channel][1:127])
+
+    t, meanSample, _ = update_seam_and_slow(station, channel, frequency, "mean", nom_sample)
+
+    logging.info(f"Start optimizing LAB {channel} using the mean of the middle samples as seam proxy!")
+    logging.info(f"The seam proxy is {meanSample:.2f} ps. Target range is [{nom_sample * mean_fast_factor:.2f}, {nom_sample * mean_slow_factor:.2f}] ps")
+
     while (meanSample > nom_sample * mean_slow_factor
            or meanSample < nom_sample * mean_fast_factor):
 
