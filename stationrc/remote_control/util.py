@@ -340,6 +340,10 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
     def seam_in_range(sample):
         return seam_fast_factor * nom_sample < sample < seam_slow_factor * nom_sample
 
+
+    def mean_in_range(sample):
+        return mean_fast_factor * nom_sample < sample < mean_slow_factor * nom_sample
+
     def slow_in_range(sample):
         return slow_fast_factor * nom_sample < sample < slow_slow_factor * nom_sample
 
@@ -384,7 +388,7 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
                  f"Target range is [{nom_sample * mean_fast_factor:.2f}, "
                  f"{nom_sample * mean_slow_factor:.2f}] ps")
 
-    while not seam_in_range(meanSample):
+    while not mean_in_range(meanSample):
 
         if curTry == max_tries:
             restore_inital_state(station, channel, initial_state)
