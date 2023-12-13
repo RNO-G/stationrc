@@ -32,6 +32,12 @@ parser.add_argument(
     help="Use external signal",
 )
 
+parser.add_argument(
+    "-q",
+    "--quad",
+    action="store_true"
+)
+
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
@@ -53,8 +59,14 @@ else:
 
 
 ok = dict()
-for ch in args.channel:
-    ok[ch] = stationrc.remote_control.initial_tune(station, ch, args.frequency, external_signal=args.external)
+if not args.quad:
+    for ch in args.channel:
+        ok[ch] = stationrc.remote_control.initial_tune(station, ch, args.frequency, external_signal=args.external)
+else:
+    for quad in range(3):
+        chs, tuned = stationrc.remote_control.initial_tune_quad(station, quad, args.frequency, external_signal=args.external)
+        for ch, t in zip(chs, tuned):
+            ok[ch] = t
 
 station.radiant_low_level_interface.calibration_save()
 station.radiant_sig_gen_off()
