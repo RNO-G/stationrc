@@ -573,6 +573,7 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
 
     needs_tuning = ~failed  # channels which already failed do not need to be tuned further
     while not mean_in_range(meanSample[needs_tuning]):
+        logging.info(f"Iteration {curTry} / {max_tries}")
         for ch_idx, channel in enumerate(channels):
 
             if curTry == max_tries and needs_tuning[ch_idx]:
@@ -617,7 +618,7 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
 
     needs_tuning = ~failed # channels which already failed do not need to be tuned further
     while not seam_in_range(seamSample[needs_tuning]) or not slow_in_range(slowSample[needs_tuning]):
-        logging.info(f"Iteration {curTry}")
+        logging.info(f"Iteration {curTry} / {max_tries}")
         for ch_idx, channel in enumerate(channels):
 
             if curTry >= max_tries and needs_tuning[ch_idx]:
