@@ -289,7 +289,7 @@ def setup_channel(station, channel):
 def tuned_width(station, channel, target_width, max_tries, seamTuneNum, TRY_REG_3_FOR_FAILED_DLL):
     scan = 1 if channel > 11 else 0
     width = station.radiant_low_level_interface.lab4d_controller_scan_width(scan)
-    logging.debug(f"Initial SSPin width: {width}")
+    logging.info(f"LAB{channel:<2}: Initial SSPin width is {width}, target is below {target_width}")
 
     if width > 1800:
         logging.warning(f"LAB{channel} DLL seems broken, disabling (width = {width})")
@@ -325,7 +325,7 @@ def tuned_width(station, channel, target_width, max_tries, seamTuneNum, TRY_REG_
         station.radiant_low_level_interface.lab4d_controller_update(channel)
         time.sleep(0.1)
         width = station.radiant_low_level_interface.lab4d_controller_scan_width(scan)
-        logging.debug(f"New SSPin width (avg {newAvg / 126}): {width}")
+        logging.info(f"New SSPin width (avg {newAvg / 126}): {width}")
         curTry += 1
 
     return curTry, seamTuneNum
