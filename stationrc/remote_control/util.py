@@ -149,7 +149,7 @@ def adjust_seam(seamSample, station, channel, nom_sample, seamTuneNum, mode="sea
     #    newVal = random.randrange(800,1200)
     #    time.sleep(2);
     logging.info(
-        f"LAB{channel}: Seam {seamSample:.2f}, register {seamTuneNum} ({cur} -> {newVal})")
+        f"LAB{channel:<2}: Seam {seamSample:.2f} ps (register {seamTuneNum}: {cur} -> {newVal})")
 
     station.radiant_low_level_interface.calibration_specifics_set(
         channel, seamTuneNum, newVal)
@@ -255,27 +255,37 @@ def get_station_information(station):
     return sample_rate, nom_sample, target_width, seam_slow_factor, seam_fast_factor, \
         slow_slow_factor, slow_fast_factor, mean_slow_factor, mean_fast_factor
 
+
+def setup_channel(station, channel):
+    initial_state = station.radiant_low_level_interface.calibration_specifics_get(channel)
     if initial_state[2] == 1024:
-        logging.info("Defaults say to NOT use the DLL")
+        logging.info(f"LAB{channel:<2}: Defaults say to NOT use the DLL")
         seamTuneNum = 3
     else:
-        logging.info("Defaults say to use the DLL")
+        logging.info(f"LAB{channel:<2}: Defaults say to use the DLL")
         seamTuneNum = 11
 
     station.radiant_low_level_interface.lab4d_controller_update(channel)
+
+    val = station.radiant_low_level_interface.lab4d_controller_autotune_vadjp(channel,
+            station.radiant_low_level_interface.calibration_specifics_get(channel)[8])
+
+    if val is None:
+        raise ValueError(f"The result of lab4d_controller_autotune_vadjp is None. Something is wrong.")
+
     station.radiant_low_level_interface.calibration_specifics_set(
-        channel,
-        8,
-        station.radiant_low_level_interface.lab4d_controller_autotune_vadjp(
-            channel,
-            station.radiant_low_level_interface.calibration_specifics_get(channel)[8],
-        ),
-    )
+        channel, 8, val)
+
     station.radiant_low_level_interface.lab4d_controller_update(channel)
+
     station.radiant_low_level_interface.monselect(channel)
     station.radiant_low_level_interface.lab4d_controller_tmon_set(
         channel, stationrc.radiant.LAB4_Controller.tmon["SSPin"]
     )
+
+    return initial_state, seamTuneNum
+
+
 def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, external_signal=False):
     TRY_REG_3_FOR_FAILED_DLL = True
 
@@ -287,6 +297,8 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
         f"Tuning channel {channel}. Sample rate is {sample_rate} MHz "
         f"(nominal sample length: {nom_sample:.2f} ps)"
     )
+
+    initial_state, seamTuneNum = setup_channel(station, channel)
 
     scan = 1 if channel > 11 else 0
     width = station.radiant_low_level_interface.lab4d_controller_scan_width(scan)
