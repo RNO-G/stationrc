@@ -158,10 +158,10 @@ def adjust_seam(seamSample, station, channel, nom_sample, seamTuneNum, mode="sea
 def adjust_slow(slowSample, slow_step, station, channel, nom_sample, slow_slow_factor, slow_fast_factor):
     if slowSample > (nom_sample * slow_slow_factor):
         slow_step = np.abs(slow_step)
-        logging.info("Need to speed up slow sample")
+        logging.info(f"Need to speed up slow sample for channel {channel}")
     elif slowSample < (nom_sample * slow_fast_factor):
         slow_step *= -1
-        logging.info("Need to slow down slow sample")
+        logging.info(f"Need to slow down slow sample for channel {channel}")
 
     current_state = station.radiant_low_level_interface.calibration_specifics_get(channel)
 
@@ -184,18 +184,18 @@ def restore_inital_state(station, channel, state):
                     channel, key, state[key])
 
     station.radiant_low_level_interface.lab4d_controller_update(channel)
-    logging.error("Initial tune failed! Restored initial state.")
+    logging.error(f"Initial tune failed for channel {channel}! Restored initial state.")
 
 
 def update_seam_and_slow(station, channel, frequency, tune_mode, nom_sample):
 
     t = get_time_run(station, frequency * 1e6)
 
-    seamSample = t[channel][0]
-    slowSample = t[channel][127]
+    seamSample = t[channel, 0]
+    slowSample = t[channel, 127]
 
     if tune_mode == "mean":
-        seamSample = np.mean(t[channel][1:127])  # trick it again :)
+        seamSample = np.mean(t[channel, 1:127], axis=-1)  # trick it again :)
 
     logging.info(
         f"Seam (mean) / slow sample timing now: {seamSample:.2f} / {slowSample:.2f} ps, "
@@ -213,19 +213,48 @@ def update_seam_and_slow(station, channel, frequency, tune_mode, nom_sample):
     return t, seamSample, slowSample
 
 
-def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, external_signal=False):
-    TRY_REG_3_FOR_FAILED_DLL = True
-
+def get_station_information(station):
     sample_rate = station.radiant_sample_rate()
     nom_sample = 1 / sample_rate * 1e6
-    logging.info(
-        f"Tuning channel {channel}. Sample rate is {sample_rate} MHz "
-        f"(nominal sample length: {nom_sample:.2f} ps)"
-    )
 
-    initial_state = station.radiant_low_level_interface.calibration_specifics_get(
-        channel
-    )
+    if sample_rate == 3200:
+        target_width = 1000
+    elif sample_rate == 2400:  # below 1000 for 3.2GHz, maybe 1000*1.33=1300 for 2.4GHz
+        target_width = 1300
+    else:
+        raise RuntimeError(f"Sample rate of {sample_rate} MHz is not supported")
+
+    if sample_rate == 2400:
+        seam_slow_factor = 1.03
+        seam_fast_factor = 0.97
+
+        slow_slow_factor = 1.01
+        slow_fast_factor = (
+            0.95  # confusing IK but it's slow sample. make is slightly fast
+        )
+
+        mean_slow_factor = 1.001  # 0.1% of 416.66 means this ends when the mean is ~0.4ps off of ideal. seam sample should close enough then.
+        mean_fast_factor = 0.999
+
+    elif sample_rate == 3200:  # help tuning a bit
+        seam_slow_factor = 1.12
+        seam_fast_factor = 0.92
+
+        slow_slow_factor = 1.02
+        slow_fast_factor = (
+            0.8  # confusing IK but it's slow sample. make is slightly fast
+        )
+
+        mean_slow_factor = 1.003  # 0.1% of 416.66 means this ends when the mean is ~0.4ps off of ideal. seam sample should close enough then.
+        mean_fast_factor = 0.997
+
+    else:
+        raise RuntimeError(f"Sample rate of {sample_rate} MHz is not supported")
+
+
+    return sample_rate, nom_sample, target_width, seam_slow_factor, seam_fast_factor, \
+        slow_slow_factor, slow_fast_factor, mean_slow_factor, mean_fast_factor
+
     if initial_state[2] == 1024:
         logging.info("Defaults say to NOT use the DLL")
         seamTuneNum = 3
@@ -247,13 +276,24 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
     station.radiant_low_level_interface.lab4d_controller_tmon_set(
         channel, stationrc.radiant.LAB4_Controller.tmon["SSPin"]
     )
+def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, external_signal=False):
+    TRY_REG_3_FOR_FAILED_DLL = True
+
+    sample_rate, nom_sample, target_width, seam_slow_factor, seam_fast_factor, \
+        slow_slow_factor, slow_fast_factor, mean_slow_factor, mean_fast_factor = \
+        get_station_information(station)
+
+    logging.info(
+        f"Tuning channel {channel}. Sample rate is {sample_rate} MHz "
+        f"(nominal sample length: {nom_sample:.2f} ps)"
+    )
 
     scan = 1 if channel > 11 else 0
     width = station.radiant_low_level_interface.lab4d_controller_scan_width(scan)
-    logging.info(f"Initial SSPin width: {width}")
+    logging.debug(f"Initial SSPin width: {width}")
 
     if width > 1800:
-        logging.warning("DLL seems broken, disabling")
+        logging.warning(f"LAB{channel} DLL seems broken, disabling (width = {width})")
         # try hack
         station.radiant_low_level_interface.lab4d_controller_write_register(
             channel, address=2, value=1024
@@ -268,15 +308,9 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
             max_tries *= 3
             logging.info("Switching to VadjN")
     else:
-        logging.info("DLL is okay")
+        logging.debug("DLL is okay")
 
     curTry = 0
-    if sample_rate == 3200:
-        target_width = 1000
-    elif sample_rate == 2400:  # below 1000 for 3.2GHz, maybe 1000*1.33=1300 for 2.4GHz
-        target_width = 1300
-    else:
-        raise RuntimeError(f"Sample rate of {sample_rate} MHz is not supported")
 
     while width > target_width and curTry < max_tries:
         newAvg = 0
@@ -318,41 +352,14 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
     oldavg = np.sum([current_state[i] for i in range(257, 383)]) / 126  # current_state is a dict
     logging.info(f"Starting average trim: {oldavg}")
 
-    if sample_rate == 2400:
-        seam_slow_factor = 1.03
-        seam_fast_factor = 0.97
-
-        slow_slow_factor = 1.01
-        slow_fast_factor = (
-            0.95  # confusing IK but it's slow sample. make is slightly fast
-        )
-
-        mean_slow_factor = 1.001  # 0.1% of 416.66 means this ends when the mean is ~0.4ps off of ideal. seam sample should close enough then.
-        mean_fast_factor = 0.999
-
-    elif sample_rate == 3200:  # help tuning a bit
-        seam_slow_factor = 1.12
-        seam_fast_factor = 0.92
-
-        slow_slow_factor = 1.02
-        slow_fast_factor = (
-            0.8  # confusing IK but it's slow sample. make is slightly fast
-        )
-
-        mean_slow_factor = 1.003  # 0.1% of 416.66 means this ends when the mean is ~0.4ps off of ideal. seam sample should close enough then.
-        mean_fast_factor = 0.997
-
-    else:
-        raise RuntimeError(f"Sample rate of {sample_rate} MHz is not supported")
-
     slow_step = 25  # was 25
-
     curTry = 0  # reset
 
     t, meanSample, _ = update_seam_and_slow(station, channel, frequency, "mean", nom_sample)
 
-    logging.info(f"Start optimizing LAB {channel} using the mean of the middle samples as seam proxy!")
-    logging.info(f"The seam proxy is {meanSample:.2f} ps. Target range is [{nom_sample * mean_fast_factor:.2f}, {nom_sample * mean_slow_factor:.2f}] ps")
+    logging.info(f"Use mean as proxy for seam. Start value is {meanSample:.2f} ps. "
+                 f"Target range is [{nom_sample * mean_fast_factor:.2f}, "
+                 f"{nom_sample * mean_slow_factor:.2f}] ps")
 
     while (meanSample > nom_sample * mean_slow_factor
            or meanSample < nom_sample * mean_fast_factor):
