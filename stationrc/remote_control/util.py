@@ -158,10 +158,10 @@ def adjust_seam(seamSample, station, channel, nom_sample, seamTuneNum, mode="sea
 def adjust_slow(slowSample, slow_step, station, channel, nom_sample, slow_slow_factor, slow_fast_factor):
     if slowSample > (nom_sample * slow_slow_factor):
         slow_step = np.abs(slow_step)
-        logging.info(f"Need to speed up slow sample for channel {channel}")
+        logging.debug(f"Need to speed up slow sample for channel {channel}")
     elif slowSample < (nom_sample * slow_fast_factor):
         slow_step *= -1
-        logging.info(f"Need to slow down slow sample for channel {channel}")
+        logging.debug(f"Need to slow down slow sample for channel {channel}")
 
     current_state = station.radiant_low_level_interface.calibration_specifics_get(channel)
 
@@ -173,7 +173,7 @@ def adjust_slow(slowSample, slow_step, station, channel, nom_sample, slow_slow_f
             channel, i, int(old + slow_step))  # Need to convert to int since might default to np.int64
 
     oldavg = oldavg / 126
-    logging.info(f"LAB{channel}: Slow {slowSample:.2f}, ({oldavg} -> {oldavg + slow_step})")
+    logging.info(f"LAB{channel:<2}: Slow {slowSample:.2f} ps ({oldavg} -> {oldavg + slow_step})")
 
     return oldavg + slow_step
 
@@ -411,7 +411,7 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
              or seamSample > nom_sample * seam_slow_factor)
              and bouncing < 3):
 
-            logging.info("----------- SEAM off ----------")
+            logging.debug("----------- SEAM off ----------")
             adjust_seam(seamSample, station, channel, nom_sample, seamTuneNum, mode=tune_mode)
 
             if (last_seam > nom_sample * seam_slow_factor
@@ -429,7 +429,7 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
         elif (slowSample > nom_sample * slow_slow_factor
                 or slowSample < nom_sample * slow_fast_factor):
 
-            logging.info("----------- SLOW off ----------")
+            logging.debug("----------- SLOW off ----------")
 
             # We ONLY DO THIS if the seam sample's close.
             # This is because the slow sample changes with the seam timing like
