@@ -148,8 +148,12 @@ def adjust_seam(seamSample, station, channel, nom_sample, seamTuneNum, mode="sea
     #    print("hmm feedback got to small. let's try something random!")
     #    newVal = random.randrange(800,1200)
     #    time.sleep(2);
-    logging.info(
-        f"LAB{channel:<2}: Seam {seamSample:.2f} ps (register {seamTuneNum}: {cur} -> {newVal})")
+    if mode == "seam":
+        logging.info(
+            f"LAB{channel:<2}: Seam {seamSample:.2f} ps (register {seamTuneNum}: {cur} -> {newVal})")
+    if mode == "mean":
+        logging.info(
+            f"LAB{channel:<2}: Mean {seamSample:.2f} ps (register {seamTuneNum}: {cur} -> {newVal})")
 
     station.radiant_low_level_interface.calibration_specifics_set(
         channel, seamTuneNum, newVal)
@@ -341,6 +345,9 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
     def seam_in_range(sample):
         return seam_fast_factor * nom_sample < sample < seam_slow_factor * nom_sample
 
+    def mean_in_range(sample):
+        return mean_fast_factor * nom_sample < sample < mean_slow_factor * nom_sample
+
     def slow_in_range(sample):
         return slow_fast_factor * nom_sample < sample < slow_slow_factor * nom_sample
 
@@ -385,7 +392,7 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
                  f"Target range is [{nom_sample * mean_fast_factor:.2f}, "
                  f"{nom_sample * mean_slow_factor:.2f}] ps")
 
-    while not seam_in_range(meanSample):
+    while not mean_in_range(meanSample):
 
         if curTry == max_tries:
             restore_inital_state(station, channel, initial_state)
@@ -501,6 +508,9 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
     def seam_in_range(samples):
         return np.all([seam_fast_factor * nom_sample < samples, samples < seam_slow_factor * nom_sample])
 
+    def mean_in_range(samples):
+        return np.all([mean_fast_factor * nom_sample < samples, samples < mean_slow_factor * nom_sample])
+
     def slow_in_range(samples):
         return np.all([slow_fast_factor * nom_sample < samples, samples < slow_slow_factor * nom_sample])
 
@@ -562,16 +572,19 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
                  f"{nom_sample * mean_slow_factor:.2f}] ps")
 
     needs_tuning = ~failed  # channels which already failed do not need to be tuned further
-    while not seam_in_range(meanSample[needs_tuning]):
+    while not mean_in_range(meanSample[needs_tuning]):
         for ch_idx, channel in enumerate(channels):
 
-            if curTry == max_tries:
+            if curTry == max_tries and needs_tuning[ch_idx]:
                 restore_inital_state(station, channel, initial_states[ch_idx])
                 failed[ch_idx] = True
-                needs_tuning[ch_idx] = False
-                continue
+                needs_tuning[ch_idx] = False  # stop here!
 
-            if seam_in_range(meanSample[ch_idx]) or not needs_tuning[ch_idx]:
+            if mean_in_range(meanSample[ch_idx]) or not needs_tuning[ch_idx]:
+                if needs_tuning[ch_idx]:
+                    # print that only once
+                    logging.info(f"-----> LAB{channel} tuned mean: {meanSample[ch_idx]:.2f} ps")
+
                 needs_tuning[ch_idx] = False  # this means: Once it was in range it will not be updated anymore
                 continue  # this channel is already in range, skip it
 
