@@ -26,6 +26,14 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--max_iterations",
+    type=int,
+    default=50,
+    help="Maximum number of iterations in each tuning step. Default: 50",
+)
+
+
+parser.add_argument(
     "-e",
     "--external",
     action="store_true",
@@ -57,14 +65,13 @@ else:
     station.radiant_low_level_interface.calibration_load()
 
 
-
 ok = dict()
 if not args.quad:
     for ch in args.channel:
-        ok[ch] = stationrc.remote_control.initial_tune(station, ch, args.frequency, external_signal=args.external)
+        ok[ch] = stationrc.remote_control.initial_tune(station, ch, args.frequency, max_tries=args.max_iterations, external_signal=args.external)
 else:
     for quad in range(3):
-        chs, tuned = stationrc.remote_control.initial_tune_quad(station, quad, args.frequency, external_signal=args.external)
+        chs, tuned = stationrc.remote_control.initial_tune_quad(station, quad, args.frequency, max_tries=args.max_iterations, external_signal=args.external)
         for ch, t in zip(chs, tuned):
             ok[ch] = t
 
