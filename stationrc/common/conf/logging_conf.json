@@ -9,13 +9,16 @@
 	"handlers": {
 		"console": {
 			"class": "logging.StreamHandler",
-			"level": "INFO",
+			"level": "DEBUG",
 			"formatter": "console",
 			"stream": "ext://sys.stdout"
 		}
 	},
 	"loggers": {
 		"ControllerBoard": {
+			"level": "INFO"
+		},
+		"LAB4DTuning": {
 			"level": "INFO"
 		},
 		"RADIANTLowLevelInterface": {
@@ -41,7 +44,7 @@
 		}
 	},
 	"root": {
-		"level": "INFO",
+		"level": "DEBUG",
 		"handlers": ["console"]
 	}
 }
