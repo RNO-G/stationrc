@@ -18,6 +18,9 @@
 		"ControllerBoard": {
 			"level": "INFO"
 		},
+		"LAB4DTuning": {
+			"level": "INFO"
+		},
 		"RADIANTLowLevelInterface": {
 			"level": "INFO"
 		},

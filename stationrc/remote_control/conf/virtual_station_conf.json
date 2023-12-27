@@ -1,10 +1,10 @@
 {
 	"daq": {
-		"data_directory": "/Users/tikarg/local/RNO-G/data",
-		"mattak_directory": "/Users/tikarg/local/mattak"
+		"data_directory": "/Users/felix/radiant/data/stationrc",
+		"mattak_directory": "/Users/felix/software/rnog/mattak"
 	},
 	"remote_control": {
-		"host": "rno-bbb-02.zeuthen.desy.de",
+		"host": "192.168.0.101",
 		"port": 8000,
 		"user": "rno-g"
 	}
