@@ -278,7 +278,8 @@ def setup_channel(station, channel):
             station.radiant_low_level_interface.calibration_specifics_get(channel)[8])
 
     if val is None:
-        raise ValueError(f"The result of lab4d_controller_autotune_vadjp is None. Something is wrong.")
+        logger.error(f"LAB{channel}: The result of lab4d_controller_autotune_vadjp is None. Something is wrong.")
+        return initial_state, None
 
     station.radiant_low_level_interface.calibration_specifics_set(
         channel, 8, val)
@@ -360,6 +361,9 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
     )
 
     initial_state, seamTuneNum = setup_channel(station, channel)
+    if seamTuneNum is None:
+        restore_inital_state(station, channel, initial_state)
+        return False
 
     curTry, seamTuneNum = tuned_width(
         station, channel, target_width, max_tries, seamTuneNum, TRY_REG_3_FOR_FAILED_DLL)
@@ -532,11 +536,14 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
         initial_states.append(istate)
         seamTuneNums.append(snum)
 
-    failed = np.array([False] * len(channels))
+    failed = np.array([n is None for n in seamTuneNums])
 
     for ch_idx, channel in enumerate(channels):
-        curTry, seamTuneNums[ch_idx] = tuned_width(
-            station, channel, target_width, max_tries, seamTuneNums[ch_idx], TRY_REG_3_FOR_FAILED_DLL)
+        if not failed[ch_idx]:
+            curTry, seamTuneNums[ch_idx] = tuned_width(
+                station, channel, target_width, max_tries, seamTuneNums[ch_idx], TRY_REG_3_FOR_FAILED_DLL)
+        else:
+            restore_inital_state(station, channel, initial_states[ch_idx])
 
         if curTry == max_tries:
             restore_inital_state(station, channel, initial_states[ch_idx])
