@@ -421,7 +421,7 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
     tune_mode = "seam"  # default
     curTry = 0  # reset
 
-    if bad_lab == True:
+    if bad_lab:
         tune_mode = "mean"
         seam_slow_factor = mean_slow_factor
         seam_fast_factor = mean_fast_factor
@@ -611,6 +611,13 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
 
         curTry += 1
 
+    # Log last channel
+    if np.sum(needs_tuning) == 1:
+        logger.info(f"-----> LAB{int(np.array(channels)[needs_tuning]):<2} tuned mean: {float(meanSample[needs_tuning]):.2f} ps")
+    elif np.all(needs_tuning):  # all channels were alread tuned
+        for channel, ms in zip(channels, meanSample):
+            logger.info(f"-----> LAB{channel:<2} tuned mean: {ms:.2f} ps")
+
     if np.all(failed):
         return channels, [False] * len(channels)
 
@@ -696,6 +703,11 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
         t, seamSample, slowSample = update_seam_and_slow(station, channels, frequency, tune_mode, nom_sample)
 
         curTry += 1
+
+    # Log last channel
+    if np.sum(needs_tuning) == 1:
+        logger.info(f"-----> LAB{np.array(channels)[needs_tuning][0]:<2} tuned: "
+                    f"{seamSample[needs_tuning][0]:.2f} / {slowSample[needs_tuning][0]:.2f} ps")
 
     for ch_idx, channel in enumerate(channels):
         logger.info(
