@@ -278,7 +278,8 @@ def setup_channel(station, channel):
             station.radiant_low_level_interface.calibration_specifics_get(channel)[8])
 
     if val is None:
-        raise ValueError(f"The result of lab4d_controller_autotune_vadjp is None. Something is wrong.")
+        logger.error(f"LAB{channel}: The result of lab4d_controller_autotune_vadjp is None. Something is wrong.")
+        return initial_state, None
 
     station.radiant_low_level_interface.calibration_specifics_set(
         channel, 8, val)
@@ -360,6 +361,9 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
     )
 
     initial_state, seamTuneNum = setup_channel(station, channel)
+    if seamTuneNum is None:
+        restore_inital_state(station, channel, initial_state)
+        return False
 
     curTry, seamTuneNum = tuned_width(
         station, channel, target_width, max_tries, seamTuneNum, TRY_REG_3_FOR_FAILED_DLL)
@@ -417,7 +421,7 @@ def initial_tune(station, channel, frequency=510, max_tries=50, bad_lab=False, e
     tune_mode = "seam"  # default
     curTry = 0  # reset
 
-    if bad_lab == True:
+    if bad_lab:
         tune_mode = "mean"
         seam_slow_factor = mean_slow_factor
         seam_fast_factor = mean_fast_factor
@@ -532,11 +536,14 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
         initial_states.append(istate)
         seamTuneNums.append(snum)
 
-    failed = np.array([False] * len(channels))
+    failed = np.array([n is None for n in seamTuneNums])
 
     for ch_idx, channel in enumerate(channels):
-        curTry, seamTuneNums[ch_idx] = tuned_width(
-            station, channel, target_width, max_tries, seamTuneNums[ch_idx], TRY_REG_3_FOR_FAILED_DLL)
+        if not failed[ch_idx]:
+            curTry, seamTuneNums[ch_idx] = tuned_width(
+                station, channel, target_width, max_tries, seamTuneNums[ch_idx], TRY_REG_3_FOR_FAILED_DLL)
+        else:
+            restore_inital_state(station, channel, initial_states[ch_idx])
 
         if curTry == max_tries:
             restore_inital_state(station, channel, initial_states[ch_idx])
@@ -603,6 +610,13 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
         t, meanSample, _ = update_seam_and_slow(station, channels, frequency, "mean", nom_sample)
 
         curTry += 1
+
+    # Log last channel
+    if np.sum(needs_tuning) == 1:
+        logger.info(f"-----> LAB{int(np.array(channels)[needs_tuning]):<2} tuned mean: {float(meanSample[needs_tuning]):.2f} ps")
+    elif np.all(needs_tuning):  # all channels were alread tuned
+        for channel, ms in zip(channels, meanSample):
+            logger.info(f"-----> LAB{channel:<2} tuned mean: {ms:.2f} ps")
 
     if np.all(failed):
         return channels, [False] * len(channels)
@@ -689,6 +703,11 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
         t, seamSample, slowSample = update_seam_and_slow(station, channels, frequency, tune_mode, nom_sample)
 
         curTry += 1
+
+    # Log last channel
+    if np.sum(needs_tuning) == 1:
+        logger.info(f"-----> LAB{np.array(channels)[needs_tuning][0]:<2} tuned: "
+                    f"{seamSample[needs_tuning][0]:.2f} / {slowSample[needs_tuning][0]:.2f} ps")
 
     for ch_idx, channel in enumerate(channels):
         logger.info(
