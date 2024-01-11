@@ -69,6 +69,20 @@ parser.add_argument(
     help="Store plots"
 )
 
+parser.add_argument(
+    "--save_data",
+    action="store_true",
+    help="Store plots"
+)
+
+parser.add_argument(
+    "--filename",
+    type=str,
+    default=None,
+    nargs="?"
+)
+
+
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
@@ -79,7 +93,7 @@ data = station.daq_record_data(
     num_events=args.num_events, force_trigger=True, use_uart=args.use_UART
 )
 
-if args.save:
+if args.save or args.save_data:
     uid = station.get_radiant_board_mcu_uid()
 
 for idx, ev in enumerate(data["data"]["WAVEFORM"]):
@@ -89,7 +103,6 @@ for idx, ev in enumerate(data["data"]["WAVEFORM"]):
             ax.plot(wvf, marker=args.marker, label=f"ch. {ch}")
     else:
         for channel in args.channel:
-            print(ev["radiant_waveforms"][channel])
             ax.plot(ev["radiant_waveforms"][channel], marker=args.marker, label=f"ch. {channel}", lw=1)
 
     if args.range is not None:
@@ -113,5 +126,17 @@ for idx, ev in enumerate(data["data"]["WAVEFORM"]):
         fig.tight_layout()
         plt.savefig(f"waveform_ch{args.channel}_{idx}_{uid:032x}", transparent=False)
 
-if not args.save:
+if not args.save and not args.save_data:
     plt.show()
+
+
+if args.save_data:
+    import json
+
+    filename = args.filename or f"waveform_ch_{uid:032x}"
+
+    if not filename.endswith(".json"):
+        filename += ".json"
+
+    with open(filename, "w") as f:
+        json.dump(data["data"]["WAVEFORM"], f)
