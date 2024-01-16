@@ -152,10 +152,10 @@ def adjust_seam(seamSample, station, channel, nom_sample, seamTuneNum, mode="sea
     #    time.sleep(2);
     if mode == "seam":
         logger.info(
-            f"LAB{channel:<2}: Seam {seamSample:.2f} ps (register {seamTuneNum}: {cur} -> {newVal})")
+            f"LAB{channel:<2}: Current seam is {seamSample:.2f} ps (register {seamTuneNum}: {cur} -> {newVal})")
     if mode == "mean":
         logger.info(
-            f"LAB{channel:<2}: Mean {seamSample:.2f} ps (register {seamTuneNum}: {cur} -> {newVal})")
+            f"LAB{channel:<2}: Current mean is {seamSample:.2f} ps (register {seamTuneNum}: {cur} -> {newVal})")
 
     station.radiant_low_level_interface.calibration_specifics_set(
         channel, seamTuneNum, newVal)
@@ -179,7 +179,7 @@ def adjust_slow(slowSample, slow_step, station, channel, nom_sample, slow_slow_f
             channel, i, int(old + slow_step))  # Need to convert to int since might default to np.int64
 
     oldavg = oldavg / 126
-    logger.info(f"LAB{channel:<2}: Slow {slowSample:.2f} ps ({oldavg} -> {oldavg + slow_step})")
+    logger.info(f"LAB{channel:<2}: Current slow is {slowSample:.2f} ps ({oldavg} -> {oldavg + slow_step})")
 
     return oldavg + slow_step
 
@@ -630,6 +630,14 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
     curTry = 0  # reset
 
     t, meanSample, _ = update_seam_and_slow(station, channels, frequency, "mean", nom_sample)
+
+    # Sanity check - no need to tune dead channels!
+    if np.any(meanSample == 0):
+        for ch_idx, channel in enumerate(channels):
+            if meanSample[ch_idx] == 0:
+                logger.info(f"LAB{channel:<2}: Mean is 0, do not tune this channel!")
+                restore_inital_state(station, channel, initial_states[ch_idx])
+                failed[ch_idx] = True
 
     logger.info(f"Use mean as proxy for seam. "
                  f"Target range is [{nom_sample * mean_fast_factor:.2f}, "
