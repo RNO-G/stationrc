@@ -7,8 +7,6 @@ import struct
 import threading
 
 
-LISTEN = True
-
 def get_ip():
     soc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     soc.settimeout(0)
@@ -25,12 +23,11 @@ def get_ip():
 
 def handleLogRecord(record):
 
-    name = record.name
-    logger = logging.getLogger(name)
     # N.B. EVERY record gets logged. This is because Logger.handle
     # is normally called AFTER logger-level filtering. If you want
     # to do filtering, do it at the client end to save wasting
     # cycles and network bandwidth!
+    logger = logging.getLogger(record.name)
     logger.handle(record)
 
 
@@ -44,17 +41,21 @@ class RemoteControl(object):
         self.logger.info(f"Connect to socket: '{socket_add}'.")
         self.socket.connect(socket_add)
 
-
         self.logger_socket = socket.socket()  # get instance
+        self.conn = None
         # look closely. The bind() function takes tuple as argument
         self.logger_socket.bind((get_ip(), logger_port))  # bind host address and port together
         # self.self.logger_socket = LogRecordSocketReceiver(host=get_ip(), port=8001)
         # configure how many client the server can listen simultaneously
         self.logger_socket.listen(2)
 
+        self.listening = True
         self.thr_logger = threading.Thread(
             target=self.receive_logger, daemon=True)  # deamon=True -> dies when program finishes
         self.thr_logger.start()
+
+        self._logger_port = logger_port
+        self.set_remote_logger_handler()
 
     def send_command(self, device, cmd, data=None):
         tx = {"device": device, "cmd": cmd}
@@ -78,23 +79,26 @@ class RemoteControl(object):
 
     def receive_logger(self):
 
-        conn, address = self.logger_socket.accept()  # accept new connection
+        self.conn, address = self.logger_socket.accept()  # accept new connection
 
-        while True:
+        while self.listening:
 
-            chunk = conn.recv(4)
+            chunk = self.conn.recv(4)
             if len(chunk) < 4:
                 break
 
             slen = struct.unpack('>L', chunk)[0]
-            chunk = conn.recv(slen)
+            chunk = self.conn.recv(slen)
             while len(chunk) < slen:
-                chunk = chunk + conn.recv(slen - len(chunk))
+                chunk = chunk + self.conn.recv(slen - len(chunk))
 
             obj = pickle.loads(chunk)
             handleLogRecord(logging.makeLogRecord(obj))
 
-        conn.close()  # close the connection
-
     def set_remote_logger_handler(self):
-        return self.send_command("radiant-board", "add_logger_handler", {"host": get_ip()})
+        return self.send_command("radiant-board", "add_logger_handler",
+                                 {"host": get_ip(), "port": self._logger_port})
+
+    def close_logger_connection(self):
+        self.listening = False
+        self.conn.close()  # close the connection

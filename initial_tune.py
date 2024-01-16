@@ -51,6 +51,7 @@ args = parser.parse_args()
 stationrc.common.setup_logging()
 
 station = stationrc.remote_control.VirtualStation()
+station.rc.set_remote_logger_handler()
 
 if args.reset_radiant:
     station.reset_radiant_board()
@@ -81,3 +82,5 @@ station.radiant_calselect(None)
 
 for ch in ok.keys():
     print(f"ch. {ch:2d} - {'OK' if ok[ch] else 'FAILED'}")
+
+station.rc.close_logger_connection()
