@@ -5,6 +5,8 @@ import pathlib
 import threading
 import zmq
 
+from cobs.cobs import DecodeError
+
 import stationrc.common
 import stationrc.radiant
 from .ControllerBoard import ControllerBoard
@@ -225,15 +227,21 @@ class Station(object):
 
                 if hasattr(dev, message["cmd"]):
                     func = getattr(dev, message["cmd"])
-                    if "data" in message:
-                        data = json.loads(message["data"])
-                        res = func(**data)
-                    else:
-                        res = func()
-                    if res != None:
-                        socket.send_json({"status": "OK", "data": res})
-                    else:
-                        socket.send_json({"status": "OK"})
+                    try:
+                        if "data" in message:
+                            data = json.loads(message["data"])
+                            res = func(**data)
+                        else:
+                            res = func()
+
+                        if res != None:
+                            socket.send_json({"status": "OK", "data": res})
+                        else:
+                            socket.send_json({"status": "OK"})
+
+                    except DecodeError:
+                        socket.send_json({"status": "ERROR", "data": "Catched a cobs.DecodeError"})
+
                 else:
                     socket.send_json({"status": "UNKNOWN_CMD"})
 

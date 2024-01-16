@@ -15,6 +15,7 @@ parser.add_argument(
     help="channels for tuning",
 )
 parser.add_argument("--reset", action="store_true", help="reset LAB4Ds")
+parser.add_argument("--reset_radiant", action="store_true", help="Reset Radiant")
 
 parser.add_argument(
     "-f",
@@ -25,10 +26,24 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--max_iterations",
+    type=int,
+    default=50,
+    help="Maximum number of iterations in each tuning step. Default: 50",
+)
+
+
+parser.add_argument(
     "-e",
     "--external",
     action="store_true",
     help="Use external signal",
+)
+
+parser.add_argument(
+    "-q",
+    "--quad",
+    action="store_true"
 )
 
 args = parser.parse_args()
@@ -36,6 +51,9 @@ args = parser.parse_args()
 stationrc.common.setup_logging()
 
 station = stationrc.remote_control.VirtualStation()
+
+if args.reset_radiant:
+    station.reset_radiant_board()
 
 if args.reset:
     for ch in args.channel:
@@ -46,9 +64,16 @@ if args.reset:
 else:
     station.radiant_low_level_interface.calibration_load()
 
+
 ok = dict()
-for ch in args.channel:
-    ok[ch] = stationrc.remote_control.initial_tune(station, ch, args.frequency, external_signal=args.external)
+if not args.quad:
+    for ch in args.channel:
+        ok[ch] = stationrc.remote_control.initial_tune(station, ch, args.frequency, max_tries=args.max_iterations, external_signal=args.external)
+else:
+    for quad in range(3):
+        chs, tuned = stationrc.remote_control.initial_tune_quad(station, quad, args.frequency, max_tries=args.max_iterations, external_signal=args.external)
+        for ch, t in zip(chs, tuned):
+            ok[ch] = t
 
 station.radiant_low_level_interface.calibration_save()
 station.radiant_sig_gen_off()
