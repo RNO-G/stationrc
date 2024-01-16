@@ -35,7 +35,7 @@ def handleLogRecord(record):
 
 
 class RemoteControl(object):
-    def __init__(self, host, port):
+    def __init__(self, host, port, logger_port):
         self.logger = logging.getLogger("RemoteControl")
 
         self.context = zmq.Context()
@@ -47,49 +47,40 @@ class RemoteControl(object):
 
         self.logger_socket = socket.socket()  # get instance
         # look closely. The bind() function takes tuple as argument
-        self.logger_socket.bind((get_ip(), 8001))  # bind host address and port together
+        self.logger_socket.bind((get_ip(), logger_port))  # bind host address and port together
         # self.self.logger_socket = LogRecordSocketReceiver(host=get_ip(), port=8001)
         # configure how many client the server can listen simultaneously
         self.logger_socket.listen(2)
 
+        self.thr_logger = threading.Thread(
+            target=self.receive_logger, daemon=True)  # deamon=True -> dies when program finishes
+        self.thr_logger.start()
+
     def send_command(self, device, cmd, data=None):
         tx = {"device": device, "cmd": cmd}
-        if data != None:
+
+        if data is not None:
             tx["data"] = json.dumps(data)
-
-        self.logger.debug(f'Starting thread to listen to logs.')
-
-        LISTEN = True
-
-        thr = threading.Thread(
-            target=self.receive_logger, daemon=True)
-        thr.start()
 
         self.logger.debug(f'Sending command: "{tx}".')
         self.socket.send_json(tx)
         message = self.socket.recv_json()
         self.logger.debug(f'Received reply: "{message}"')
 
-        if not "status" in message or message["status"] != "OK":
+        if "status" not in message or message["status"] != "OK":
             self.logger.error(f'Sent: "{tx}". Received: "{message}"')
             return None
 
-        LISTEN = False
-        # thr.join()
-        # print("-- ", stop.is_set())
-
-        if not "data" in message:
+        if "data" not in message:
             return None
 
         return message["data"]
 
     def receive_logger(self):
-        global LISTEN
 
         conn, address = self.logger_socket.accept()  # accept new connection
 
-        # self.logger.info("Listen to logs from from: " + str(address))
-        while LISTEN:
+        while True:
 
             chunk = conn.recv(4)
             if len(chunk) < 4:

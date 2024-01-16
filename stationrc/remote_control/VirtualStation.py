@@ -18,6 +18,7 @@ class VirtualStation(object):
         self.rc = RemoteControl(
             self.station_conf["remote_control"]["host"],
             self.station_conf["remote_control"]["port"],
+            self.station_conf["remote_control"]["logger_port"],
         )
         self.radiant_low_level_interface = RADIANTLowLevelInterface(
             remote_control=self.rc
