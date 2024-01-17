@@ -15,7 +15,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "-c", "--channel",
+    "-c", "--channels",
     action="store_true",
     help="Print some results per channel"
 )
