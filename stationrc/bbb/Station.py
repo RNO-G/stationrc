@@ -93,7 +93,7 @@ class Station(object):
 
         while True:
             packet = waveforms.get_next_packet()
-            if packet == None:
+            if packet is None:
                 break
             packet["radiant_waveforms"] = packet["radiant_waveforms"].tolist()
             packet["lt_waveforms"] = packet["lt_waveforms"].tolist()
@@ -132,7 +132,7 @@ class Station(object):
 
             while True:
                 packet = pedestals.get_next_packet()
-                if packet == None:
+                if packet is None:
                     break
 
                 packet["vbias"] = packet["vbias"].tolist()
@@ -185,6 +185,60 @@ class Station(object):
         with open(self.station_conf["daq"]["run_conf"], "w") as f:
             libconf.dump(data, f)
 
+    def _parse_message_execute_command_send_result(self, socket, message):
+        self.logger.debug(f'Received remote command: "{message}".')
+        if not ("device" in message and "cmd" in message):
+            self.logger.error(f'Received malformed command: "{message}".')
+            socket.send_json({"status": "ERROR"})
+
+        elif message["device"] == "controller-board":
+            res = self.controller_board.run_command(message["cmd"])
+            socket.send_json({"status": "OK", "data": res})
+
+        elif message["device"] in [
+            "radiant-board",
+            "radiant-calib",
+            "radiant-calram",
+            "radiant-dma",
+            "radiant-labc",
+            "radiant-sig-gen",
+            "station",
+        ]:
+            if message["device"] == "radiant-board":
+                dev = self.radiant_board
+            elif message["device"] == "radiant-calib":
+                dev = self.radiant_board.calib
+            elif message["device"] == "radiant-calram":
+                dev = self.radiant_board.calram
+            elif message["device"] == "radiant-dma":
+                dev = self.radiant_board.dma
+            elif message["device"] == "radiant-labc":
+                dev = self.radiant_board.labc
+            elif message["device"] == "radiant-sig-gen":
+                dev = self.radiant_board.radsig
+            elif message["device"] == "station":
+                dev = self
+
+            if hasattr(dev, message["cmd"]):
+                func = getattr(dev, message["cmd"])
+                if "data" in message:
+                    data = json.loads(message["data"])
+                    res = func(**data)
+                else:
+                    res = func()
+
+                if res is not None:
+                    socket.send_json({"status": "OK", "data": res})
+                else:
+                    socket.send_json({"status": "OK"})
+
+            else:
+                socket.send_json({"status": "UNKNOWN_CMD"})
+
+        else:
+            socket.send_json({"status": "UNKNOWN_DEV"})
+
+
     def _receive_remote_command(self):
         context = zmq.Context()
         socket = context.socket(zmq.REP)
@@ -192,58 +246,12 @@ class Station(object):
 
         while True:
             message = socket.recv_json()
-            self.logger.debug(f'Received remote command: "{message}".')
-            if not ("device" in message and "cmd" in message):
-                self.logger.error(f'Received malformed command: "{message}".')
-                socket.send_json({"status": "ERROR"})
-
-            elif message["device"] == "controller-board":
-                res = self.controller_board.run_command(message["cmd"])
-                socket.send_json({"status": "OK", "data": res})
-
-            elif message["device"] in [
-                "radiant-board",
-                "radiant-calib",
-                "radiant-calram",
-                "radiant-dma",
-                "radiant-labc",
-                "radiant-sig-gen",
-                "station",
-            ]:
-                if message["device"] == "radiant-board":
-                    dev = self.radiant_board
-                elif message["device"] == "radiant-calib":
-                    dev = self.radiant_board.calib
-                elif message["device"] == "radiant-calram":
-                    dev = self.radiant_board.calram
-                elif message["device"] == "radiant-dma":
-                    dev = self.radiant_board.dma
-                elif message["device"] == "radiant-labc":
-                    dev = self.radiant_board.labc
-                elif message["device"] == "radiant-sig-gen":
-                    dev = self.radiant_board.radsig
-                elif message["device"] == "station":
-                    dev = self
-
-                if hasattr(dev, message["cmd"]):
-                    func = getattr(dev, message["cmd"])
-                    try:
-                        if "data" in message:
-                            data = json.loads(message["data"])
-                            res = func(**data)
-                        else:
-                            res = func()
-
-                        if res != None:
-                            socket.send_json({"status": "OK", "data": res})
-                        else:
-                            socket.send_json({"status": "OK"})
-
-                    except DecodeError:
-                        socket.send_json({"status": "ERROR", "data": "Catched a cobs.DecodeError"})
-
-                else:
-                    socket.send_json({"status": "UNKNOWN_CMD"})
-
-            else:
-                socket.send_json({"status": "UNKNOWN_DEV"})
+            try:
+                self._parse_message_execute_command_send_result(socket, message)
+            except DecodeError:
+                self.logger.warning("Detect cobs.DecodeError! Reinitialize radiant object ...")
+                self._radiant_board = None
+                try:
+                    self._parse_message_execute_command_send_result(socket, message)
+                except DecodeError:
+                    socket.send_json({"status": "ERROR", "data": "Catched a cobs.DecodeError"})
