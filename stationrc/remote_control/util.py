@@ -781,10 +781,12 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
             # Add new seam to the list to calculate average.
             tmp = []
             for seam_list, new_seam in zip(seamSamples, seamSample):
-                if len(seam_list) >= 3:
+                if len(seam_list) >= 5:
                     seam_list = np.delete(seam_list, 0)  # remove oldest element
+
                 seam_list = np.append(seam_list, new_seam)
                 tmp.append(seam_list)
+
             seamSamples = np.array(tmp)
         else:
             seamSamples = np.array([[ele] for ele in seamSample])  # just replace all entries
