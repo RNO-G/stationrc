@@ -803,12 +803,17 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
                 logger.info(f"-----> The last three seam samples were: {seamSamples[ch_idx]} ps")
 
     for ch_idx, channel in enumerate(channels):
-        logger.info(
-            f"LAB{channel} ending seam sample: {np.mean(seamSamples, axis=-1)[ch_idx]:.2f}, using register {seamTuneNums[ch_idx]} with value "
-            f"{station.radiant_low_level_interface.calibration_specifics_get(channel)[seamTuneNums[ch_idx]]}.")
+        result = "failed" if failed[ch_idx] else "passed"
+        if seamTuneNums[ch_idx] is not None:
+            logger.info(
+                f"LAB{channel} {result} with seam sample: {np.mean(seamSamples, axis=-1)[ch_idx]:.2f}, using register {seamTuneNums[ch_idx]} with value "
+                f"{station.radiant_low_level_interface.calibration_specifics_get(channel)[seamTuneNums[ch_idx]]}.")
+        else:
+            logger.info(
+                f"LAB{channel} {result} with seam sample: {np.mean(seamSamples, axis=-1)[ch_idx]:.2f}.")
 
         logger.info(
-            f"LAB{channel} ending slow sample: {slowSample[ch_idx]:.2f}, average earlier trims {oldavgs[ch_idx]}")
+            f"LAB{channel} {result} with slow sample: {slowSample[ch_idx]:.2f}, average earlier trims {oldavgs[ch_idx]}")
 
     station.radiant_calselect(quad=None)
     station.radiant_sig_gen_off()
