@@ -45,6 +45,7 @@ class Station(object):
     def reset_radiant_board(self):
         self._radiant_board = None
 
+
     def daq_record_data(
         self,
         num_events=1,
@@ -86,59 +87,13 @@ class Station(object):
         )
         self.acq_proc.wait()
 
-        data = {"WAVEFORM": []}
-        waveforms = stationrc.common.RNOGDataFile(
-            self.station_conf["daq"]["radiant-try-event_wfs_file"]
+        data = stationrc.common.dump_binary(
+            wfs_file=self.station_conf["daq"]["radiant-try-event_wfs_file"],
+            read_header=read_header,
+            hdr_file=self.station_conf["daq"]["radiant-try-event_hdr_file"],
+            read_pedestal=read_pedestal,
+            ped_file=self.station_conf["daq"]["radiant-try-event_ped_file"]
         )
-
-        while True:
-            packet = waveforms.get_next_packet()
-            if packet is None:
-                break
-            packet["radiant_waveforms"] = packet["radiant_waveforms"].tolist()
-            packet["lt_waveforms"] = packet["lt_waveforms"].tolist()
-            data["WAVEFORM"].append(packet)
-
-        if read_header:
-            headers = stationrc.common.RNOGDataFile(
-                self.station_conf["daq"]["radiant-try-event_hdr_file"]
-            )
-
-            data["HEADER"] = []
-
-            while True:
-                packet = headers.get_next_packet()
-                if packet == None:
-                    break
-
-                packet["radiant_start_windows"] = packet[
-                    "radiant_start_windows"
-                ].tolist()
-                packet["simple_trig_conf"]["_bitfield_stuff"] = packet[
-                    "simple_trig_conf"
-                ]["_bitfield_stuff"].tolist()
-                packet["trig_conf"]["_bitfield_stuff"] = packet["trig_conf"][
-                    "_bitfield_stuff"
-                ].tolist()
-
-                data["HEADER"].append(packet)
-
-        if read_pedestal:
-            pedestals = stationrc.common.RNOGDataFile(
-                self.station_conf["daq"]["radiant-try-event_ped_file"]
-            )
-
-            data["PEDESTAL"] = list()
-
-            while True:
-                packet = pedestals.get_next_packet()
-                if packet is None:
-                    break
-
-                packet["vbias"] = packet["vbias"].tolist()
-                packet["pedestals"] = packet["pedestals"].tolist()
-
-                data["PEDESTAL"].append(packet)
 
         return {"data": data}
 

@@ -45,10 +45,10 @@ class RNOGDataFile(RawDataFile):
     def read_packet(self, type, version):
         version = f"v{version}"
 
-        if not type in self.data_format:
+        if type not in self.data_format:
             raise ValueError(f"Packet type {type} not supported.")
 
-        if not version in self.data_format[type]:
+        if version not in self.data_format[type]:
             raise ValueError(f"{type} packet version {version} not supported.")
 
         data = {"type": type}
