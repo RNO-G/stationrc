@@ -597,6 +597,7 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
                 station, channel, target_width, max_tries, seamTuneNums[ch_idx], TRY_REG_3_FOR_FAILED_DLL)
         else:
             restore_inital_state(station, channel, initial_states[ch_idx])
+            continue
 
         if curTry == max_tries:
             restore_inital_state(station, channel, initial_states[ch_idx])
@@ -730,6 +731,11 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
             if not needs_tuning[ch_idx]:
                 continue
 
+            if bouncing[ch_idx]:
+                logger.info(f"LAB{channels[ch_idx]:<2}: Bouncing {bouncing[ch_idx]} "
+                            f"(seam in range: {seam_in_range(seamSample[ch_idx])}) "
+                            f"(slow in range: {slow_in_range(slowSample[ch_idx])})")
+
             # Fix the seam if it's gone off too much. Here use seamSample (i.e. the last one only!)
             if not seam_in_range(seamSample[ch_idx]) and bouncing[ch_idx] < 3:
 
@@ -800,7 +806,7 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
                                        slowSample[needs_tuning]):
             logger.info(f"-----> LAB{channel:<2} tuned: {seam:.2f} / {slow:.2f} ps")
             if tune_with_rolling_mean:
-                logger.info(f"-----> The last three seam samples were: {seamSamples[ch_idx]} ps")
+                logger.info(f"-----> The last five seam samples were: {seamSamples[ch_idx]} ps")
 
     for ch_idx, channel in enumerate(channels):
         result = "failed" if failed[ch_idx] else "passed"
