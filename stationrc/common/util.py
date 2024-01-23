@@ -13,21 +13,28 @@ def rootify(data_dir, mattak_dir="", logger=logging.getLogger("root")):
     header_root = datadir / "header.root"
     waveforms_root = datadir / "waveforms.root"
 
+    daq_files = list((datadir / "daqstatus").glob("*.ds.dat*"))
+    daq_files.sort()
     proc = Executor(
-        cmd=[pathlib.Path(mattak_dir) / "rno-g-convert", "ds", daqstatus_root]
-        + list((datadir / "daqstatus").glob("*.ds.dat*")),
+        cmd=[pathlib.Path(mattak_dir) / "rno-g-convert", "ds", daqstatus_root] + daq_files,
         logger=logger,
     )
     proc.wait()
+
+
+    hdr_files = list((datadir / "header").glob("*.hd.dat*"))
+    hdr_files.sort()
     proc = Executor(
-        cmd=[pathlib.Path(mattak_dir) / "rno-g-convert", "hd", header_root]
-        + list((datadir / "header").glob("*.hd.dat*")),
+        cmd=[pathlib.Path(mattak_dir) / "rno-g-convert", "hd", header_root] + hdr_files,
         logger=logger,
     )
     proc.wait()
+
+
+    wfs_files = list((datadir / "waveforms").glob("*.wf.dat*"))
+    wfs_files.sort()
     proc = Executor(
-        cmd=[pathlib.Path(mattak_dir) / "rno-g-convert", "wf", waveforms_root]
-        + list((datadir / "waveforms").glob("*.wf.dat*")),
+        cmd=[pathlib.Path(mattak_dir) / "rno-g-convert", "wf", waveforms_root] + wfs_files,
         logger=logger,
     )
     proc.wait()
