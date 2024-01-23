@@ -6,7 +6,7 @@ from .RunConfig import RunConfig
 
 class Run(object):
     def __init__(self, station):
-        self.run_conf = run_conf = RunConfig.load_default_config()
+        self.run_conf = RunConfig.load_default_config()
         self.station = station
 
     def start(self, delete_src=False, rootify=False):
