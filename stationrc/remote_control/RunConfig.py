@@ -74,6 +74,15 @@ class RunConfig(object):
             mask |= 1 << ch
         self["radiant"]["trigger"]["RF1"]["mask"] = mask
 
+    def radiant_readout_mask(self, channels):
+        if isinstance(channels, int):
+            channels = [channels]
+
+        mask = 0
+        for ch in channels:
+            mask |= 1 << ch
+        self["radiant"]["readout"]["readout_mask"] = mask
+
     def radiant_trigger_rf1_num_coincidences(self, value):
         self["radiant"]["trigger"]["RF1"]["num_coincidences"] = value
 
