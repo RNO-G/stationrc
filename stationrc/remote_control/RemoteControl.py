@@ -5,7 +5,6 @@ import socket
 import pickle
 import struct
 import threading
-import time
 
 def get_ip():
     soc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -43,8 +42,9 @@ class RemoteControl(object):
 
         # self.logger_socket = socket.create_server((get_ip(), logger_port), reuse_port=True)  # get instance
         self.logger_socket = socket.socket()
-        self.logger_socket.bind((get_ip(), logger_port))  # bind host address and port together
-        self.logger.info(f"Listening to logging on  {get_ip()}:{logger_port}")
+        self.logger_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.logger_socket.bind(("", logger_port))  # bind to all interfaces
+        self.logger.info(f"Listening to logging on port {logger_port}")
 
         # configure how many client the server can listen simultaneously
         self.logger_socket.listen(1)
@@ -87,7 +87,7 @@ class RemoteControl(object):
 
     def receive_logger(self):
 
-        self.conn, address = self.logger_socket.accept()  # accept new connection
+        self.conn, _ = self.logger_socket.accept()  # accept new connection
 
         while self.listening:
             chunk = self.conn.recv(4)
@@ -108,10 +108,3 @@ class RemoteControl(object):
         self.logger.info("Set remote logger handler")
         return self.send_command("radiant-board", "add_logger_handler",
                                  {"host": get_ip(), "port": self._logger_port})
-
-    def close_logger_connection(self):
-        self.logger.info("Set listening to false")
-        self.listening = False
-        self.conn.close()  # close the connection
-        self.logger_socket.close()
-        self.logger.info("Closed connection/logger")
