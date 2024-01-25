@@ -64,20 +64,20 @@ class RADIANTLowLevelInterface(object):
     def calibration_load_from_local(self):
         filename = pathlib.Path(__file__).parent / ".." / ".." / "calib" / \
             f"cal_{self.board_manager_uid():032x}.json"
-            
+
         self.logger.info(f"Loading calibration: {filename}")
-            
+
         if not pathlib.Path(filename).exists():
             self.logger.warning(f"File '{filename}' does not exist. Doing nothing!")
             return
 
         with open(filename, "r") as f:
             calib = json.load(f)
-            
+
         for ch in calib.keys():
             for key in calib[ch].keys():
                 self.calibration_specifics_set(int(ch), int(key), calib[ch][key])
-                
+
     def calibration_save(self):
         self.logger.info(f"Saving calibration for board {self.board_manager_uid():032x}")
         self.rc.send_command(
@@ -87,12 +87,12 @@ class RADIANTLowLevelInterface(object):
         calib = dict()
         for ch in range(self.NUM_CHANNELS):
             calib[ch] = self.calibration_specifics_get(ch)
-        
+
         filename = pathlib.Path(__file__).parent / ".." / ".." / "calib" / \
             f"cal_{self.board_manager_uid():032x}.json"
-            
+
         self.logger.info(f"Saving calibration: {filename}")
-        
+
         with open(filename, "w") as f:
             json.dump(calib, f)
 
@@ -186,6 +186,9 @@ class RADIANTLowLevelInterface(object):
         return self.rc.send_command(
             "radiant-labc", "scan_width", {"scanNum": scan_num, "trials": trials}
         )
+
+    def lab4d_controller_scan_dump(self, lab=31):  # 31 = station.radiant_board.labc.labAll
+        return self.rc.send_command("radiant-labc", "scan_dump", {"lab": lab})
 
     def lab4d_controller_start(self):
         self.rc.send_command("radiant-labc", "start")

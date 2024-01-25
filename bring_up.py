@@ -13,6 +13,12 @@ parser.add_argument(
     default=3,
     help="Specify version number of config file for CPLDs. Default: 3",
 )
+parser.add_argument(
+    "-p",
+    "--pedestals",
+    action="store_true",
+    help="If true, request and store pedestals.",
+)
 
 args = parser.parse_args()
 
@@ -27,7 +33,9 @@ except KeyboardInterrupt:
     station.rc.close_logger_connection()
     sys.exit()
 
-with open(f"peds_{station.get_radiant_board_mcu_uid():032x}.json", "w") as f:
-    json.dump(station.radiant_pedestal_get(), f)
+station.radiant_setup(version=args.version)
+if args.pedestals:
+    with open(f"peds_{station.get_radiant_board_mcu_uid():032x}.json", "w") as f:
+        json.dump(station.radiant_pedestal_get(), f)
 
 station.rc.close_logger_connection()

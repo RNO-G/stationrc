@@ -9,6 +9,18 @@ def print_dict(d, prefix="   "):
     for key in d.keys():
         print(f"{prefix}{key}: {d[key]}")
 
+import argparse
+
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "-c", "--channels",
+    action="store_true",
+    help="Print some results per channel"
+)
+
+args = parser.parse_args()
 
 stationrc.common.setup_logging()
 
@@ -74,3 +86,11 @@ print(line)
 pedestal_voltage = station.radiant_low_level_interface.pedestal_voltage_get()
 print("Pedestal voltage:")
 print_dict(pedestal_voltage)
+
+data = station.radiant_low_level_interface.lab4d_controller_scan_dump()
+print("Scan dump: ", ", ".join([f"{key}: {value}" for key, value in data.items()]))
+
+if args.channels:
+    for i in range(24):
+        data = station.radiant_low_level_interface.lab4d_controller_scan_dump(i)
+        print(f"Scan dump {i}: ", ", ".join([f"{key}: {value}" for key, value in data.items()]))

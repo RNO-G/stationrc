@@ -152,10 +152,10 @@ def adjust_seam(seamSample, station, channel, nom_sample, seamTuneNum, mode="sea
     #    time.sleep(2);
     if mode == "seam":
         logger.info(
-            f"LAB{channel:<2}: Seam {seamSample:.2f} ps (register {seamTuneNum}: {cur} -> {newVal})")
+            f"LAB{channel:<2}: Current seam is {seamSample:.2f} ps (register {seamTuneNum}: {cur} -> {newVal})")
     if mode == "mean":
         logger.info(
-            f"LAB{channel:<2}: Mean {seamSample:.2f} ps (register {seamTuneNum}: {cur} -> {newVal})")
+            f"LAB{channel:<2}: Current mean is {seamSample:.2f} ps (register {seamTuneNum}: {cur} -> {newVal})")
 
     station.radiant_low_level_interface.calibration_specifics_set(
         channel, seamTuneNum, newVal)
@@ -179,7 +179,7 @@ def adjust_slow(slowSample, slow_step, station, channel, nom_sample, slow_slow_f
             channel, i, int(old + slow_step))  # Need to convert to int since might default to np.int64
 
     oldavg = oldavg / 126
-    logger.info(f"LAB{channel:<2}: Slow {slowSample:.2f} ps ({oldavg} -> {oldavg + slow_step})")
+    logger.info(f"LAB{channel:<2}: Current slow is {slowSample:.2f} ps ({oldavg} -> {oldavg + slow_step})")
 
     return oldavg + slow_step
 
@@ -506,15 +506,68 @@ def get_channels_for_quad(quad):
         return [8, 9, 10, 11, 20, 21, 22, 23]
     return None
 
-def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False, external_signal=False):
+def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False, external_signal=False,
+                      tune_with_rolling_mean=False):
+    """
+    Time tuning algorithm
+
+    Parameters
+    ----------
+
+    station : `radiant.radiant.RADIANT`
+        The radiant object.
+
+    quad : int
+        Select which quad to tune (the channels of this quad).
+
+    frequency : float
+        The tuning frequency in MHz. (Default: 510)
+
+    max_tries : int
+        The maximum number of iteration in each of the 2 tuning loops. (Default: 50)
+
+    bad_lab : bool
+        ...
+
+    external_signal : bool
+        If True, use an external signal for tuning: Do not turn on signal generator and
+        do not select the quad. The configured frequency has to match that of the external
+        signal. (Default: False)
+
+    tune_with_rolling_mean : bool
+        If true, also require the mean over the last 3 measurements of the seam sample to be
+        within the tolerance. (Default: False)
+
+    Returns
+    -------
+
+    channels : list of ints
+        List of all channel which were tuned.
+
+    passed : list of bools
+        List of whether a channel was tuned successful.
+    """
     TRY_REG_3_FOR_FAILED_DLL = True
 
     sample_rate, nom_sample, target_width, seam_slow_factor, seam_fast_factor, \
         slow_slow_factor, slow_fast_factor, mean_slow_factor, mean_fast_factor = \
         get_station_information(station)
 
+    def seam_mean_in_range(samples):
+        # if tune_with_rolling_mean == False, last_sample == samples_mean
+        if len(samples) == 1:  # i.e. == [[...]]
+            last_sample = samples[0][-1]
+            samples_mean = np.mean(samples)
+        else:
+            last_sample = samples[:, -1]
+            samples_mean = np.mean(samples, axis=-1)
+
+        return np.all([seam_fast_factor * nom_sample < samples_mean, samples_mean < seam_slow_factor * nom_sample,
+                        seam_fast_factor * nom_sample < last_sample, last_sample < seam_slow_factor * nom_sample])
+
     def seam_in_range(samples):
         return np.all([seam_fast_factor * nom_sample < samples, samples < seam_slow_factor * nom_sample])
+
 
     def mean_in_range(samples):
         return np.all([mean_fast_factor * nom_sample < samples, samples < mean_slow_factor * nom_sample])
@@ -544,6 +597,7 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
                 station, channel, target_width, max_tries, seamTuneNums[ch_idx], TRY_REG_3_FOR_FAILED_DLL)
         else:
             restore_inital_state(station, channel, initial_states[ch_idx])
+            continue
 
         if curTry == max_tries:
             restore_inital_state(station, channel, initial_states[ch_idx])
@@ -578,6 +632,14 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
 
     t, meanSample, _ = update_seam_and_slow(station, channels, frequency, "mean", nom_sample)
 
+    # Sanity check - no need to tune dead channels!
+    if np.any(meanSample == 0):
+        for ch_idx, channel in enumerate(channels):
+            if meanSample[ch_idx] == 0:
+                logger.info(f"LAB{channel:<2}: Mean is 0, do not tune this channel!")
+                restore_inital_state(station, channel, initial_states[ch_idx])
+                failed[ch_idx] = True
+
     logger.info(f"Use mean as proxy for seam. "
                  f"Target range is [{nom_sample * mean_fast_factor:.2f}, "
                  f"{nom_sample * mean_slow_factor:.2f}] ps")
@@ -611,11 +673,9 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
 
         curTry += 1
 
-    # Log last channel
-    if np.sum(needs_tuning) == 1:
-        logger.info(f"-----> LAB{int(np.array(channels)[needs_tuning]):<2} tuned mean: {float(meanSample[needs_tuning]):.2f} ps")
-    elif np.all(needs_tuning):  # all channels were alread tuned
-        for channel, ms in zip(channels, meanSample):
+    # Log last channel(s)
+    if np.any(needs_tuning):
+        for channel, ms in zip(np.array(channels)[needs_tuning], meanSample[needs_tuning]):
             logger.info(f"-----> LAB{channel:<2} tuned mean: {ms:.2f} ps")
 
     if np.all(failed):
@@ -634,9 +694,18 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
                  f"[{nom_sample * seam_fast_factor:.2f}, {nom_sample * seam_slow_factor:.2f}] ps / "
                  f"[{nom_sample * slow_fast_factor:.2f}, {nom_sample * slow_slow_factor:.2f}] ps")
 
+    # keeping the seam samples like this allows to keep the seam from a prev. interation
+    # to calculate a rolling average
+    seamSamples = np.array([[ele] for ele in seamSample])
+
     needs_tuning = ~failed # channels which already failed do not need to be tuned further
-    while not seam_in_range(seamSample[needs_tuning]) or not slow_in_range(slowSample[needs_tuning]):
+    # we always calculate the mean from seamSamples. However, if tune_with_rolling_mean == False we calculate the mean over one number ...
+    while not seam_mean_in_range(seamSamples[needs_tuning]) or not slow_in_range(slowSample[needs_tuning]):
         logger.info(f"Iteration {curTry} / {max_tries}")
+
+        for channel, seam in zip(np.array(channels)[needs_tuning], seamSamples[needs_tuning]):
+            logger.debug(f"LAB{channel:<2}: current seam samples: {seam}")
+
         for ch_idx, channel in enumerate(channels):
 
             if curTry >= max_tries and needs_tuning[ch_idx]:
@@ -644,18 +713,30 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
                 failed[ch_idx] = True
                 needs_tuning[ch_idx] = False  # stop here!
 
-            if seam_in_range(seamSample[ch_idx]) and slow_in_range(slowSample[ch_idx]):
+            if seam_in_range(seamSamples[ch_idx]) and slow_in_range(slowSample[ch_idx]):
                 if needs_tuning[ch_idx]:
                     # print that only once
-                    logger.info(f"-----> LAB{channel} tuned: {seamSample[ch_idx]:.2f} / {slowSample[ch_idx]:.2f} ps")
+                    logger.info(f"-----> LAB{channel} tuned: {np.mean(seamSamples, axis=-1)[ch_idx]:.2f} / {slowSample[ch_idx]:.2f} ps")
+                    if tune_with_rolling_mean:
+                        logger.info(f"-----> The last three seam samples were: {seamSamples[ch_idx]} ps")
                 else:
-                    logger.debug(f"-----> LAB{channel} still in range: {seamSample[ch_idx]:.2f} / {slowSample[ch_idx]:.2f} ps")
+                    logger.debug(f"-----> LAB{channel} still in range: {np.mean(seamSamples, axis=-1)[ch_idx]:.2f} / {slowSample[ch_idx]:.2f} ps")
                 needs_tuning[ch_idx] = False  # this means: Once it was in range it will not be updated anymore
+            elif not needs_tuning[ch_idx]:
+                # Unless this channel faild in before this while loop it dropped out of range after
+                # is was in range
+                logger.debug(f"-----> LAB{channel} (probably) out of range again: "
+                             f"{np.mean(seamSamples, axis=-1)[ch_idx]:.2f} / {slowSample[ch_idx]:.2f} ps")
 
             if not needs_tuning[ch_idx]:
                 continue
 
-            # Fix the seam if it's gone off too much.
+            if bouncing[ch_idx]:
+                logger.info(f"LAB{channels[ch_idx]:<2}: Bouncing {bouncing[ch_idx]} "
+                            f"(seam in range: {seam_in_range(seamSample[ch_idx])}) "
+                            f"(slow in range: {slow_in_range(slowSample[ch_idx])})")
+
+            # Fix the seam if it's gone off too much. Here use seamSample (i.e. the last one only!)
             if not seam_in_range(seamSample[ch_idx]) and bouncing[ch_idx] < 3:
 
                 logger.debug(f"LAB{channel} SEAM off")
@@ -702,20 +783,44 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
         # only use data from channels which still need tuning. Otherwise they could fall out of range again
         t, seamSample, slowSample = update_seam_and_slow(station, channels, frequency, tune_mode, nom_sample)
 
+        if tune_with_rolling_mean:
+            # Add new seam to the list to calculate average.
+            tmp = []
+            for seam_list, new_seam in zip(seamSamples, seamSample):
+                if len(seam_list) >= 5:
+                    seam_list = np.delete(seam_list, 0)  # remove oldest element
+
+                seam_list = np.append(seam_list, new_seam)
+                tmp.append(seam_list)
+
+            seamSamples = np.array(tmp)
+        else:
+            seamSamples = np.array([[ele] for ele in seamSample])  # just replace all entries
+
         curTry += 1
 
-    # Log last channel
-    if np.sum(needs_tuning) == 1:
-        logger.info(f"-----> LAB{np.array(channels)[needs_tuning][0]:<2} tuned: "
-                    f"{seamSample[needs_tuning][0]:.2f} / {slowSample[needs_tuning][0]:.2f} ps")
+    # Log last channel(s)
+    if np.any(needs_tuning):
+        for channel, seam, slow, seams in zip(np.array(channels)[needs_tuning],
+                                       np.mean(seamSamples, axis=-1)[needs_tuning],
+                                       slowSample[needs_tuning],
+                                       seamSamples[needs_tuning]):
+            logger.info(f"-----> LAB{channel:<2} tuned: {seam:.2f} / {slow:.2f} ps")
+            if tune_with_rolling_mean:
+                logger.info(f"-----> The last five seam samples were: {seams} ps")
 
     for ch_idx, channel in enumerate(channels):
-        logger.info(
-            f"LAB{channel} ending seam sample: {seamSample[ch_idx]:.2f}, using register {seamTuneNums[ch_idx]} with value "
-            f"{station.radiant_low_level_interface.calibration_specifics_get(channel)[seamTuneNums[ch_idx]]}.")
+        result = "failed" if failed[ch_idx] else "passed"
+        if seamTuneNums[ch_idx] is not None:
+            logger.info(
+                f"LAB{channel} {result} with seam sample: {np.mean(seamSamples, axis=-1)[ch_idx]:.2f}, using register {seamTuneNums[ch_idx]} with value "
+                f"{station.radiant_low_level_interface.calibration_specifics_get(channel)[seamTuneNums[ch_idx]]}.")
+        else:
+            logger.info(
+                f"LAB{channel} {result} with seam sample: {np.mean(seamSamples, axis=-1)[ch_idx]:.2f}.")
 
         logger.info(
-            f"LAB{channel} ending slow sample: {slowSample[ch_idx]:.2f}, average earlier trims {oldavgs[ch_idx]}")
+            f"LAB{channel} {result} with slow sample: {slowSample[ch_idx]:.2f}, average earlier trims {oldavgs[ch_idx]}")
 
     station.radiant_calselect(quad=None)
     station.radiant_sig_gen_off()

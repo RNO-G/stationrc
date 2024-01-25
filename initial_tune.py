@@ -46,6 +46,12 @@ parser.add_argument(
     action="store_true"
 )
 
+parser.add_argument(
+    "-a",
+    "--average",
+    action="store_true"
+)
+
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
@@ -69,10 +75,13 @@ else:
 ok = dict()
 if not args.quad:
     for ch in args.channel:
-        ok[ch] = stationrc.remote_control.initial_tune(station, ch, args.frequency, max_tries=args.max_iterations, external_signal=args.external)
+        ok[ch] = stationrc.remote_control.initial_tune(
+            station, ch, args.frequency, max_tries=args.max_iterations, external_signal=args.external)
 else:
     for quad in range(3):
-        chs, tuned = stationrc.remote_control.initial_tune_quad(station, quad, args.frequency, max_tries=args.max_iterations, external_signal=args.external)
+        chs, tuned = stationrc.remote_control.initial_tune_quad(
+            station, quad, args.frequency, max_tries=args.max_iterations, external_signal=args.external,
+            tune_with_rolling_mean=args.average)
         for ch, t in zip(chs, tuned):
             ok[ch] = t
 
