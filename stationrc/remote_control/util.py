@@ -333,7 +333,7 @@ def tuned_width(station, channel, target_width, max_tries, seamTuneNum, TRY_REG_
         station.radiant_low_level_interface.lab4d_controller_update(channel)
         time.sleep(0.1)
         width = station.radiant_low_level_interface.lab4d_controller_scan_width(scan)
-        logger.info(f"New SSPin width (avg {newAvg / 126}): {width}")
+        logger.info(f"New SSPin width (avg {newAvg / 126}): {width} (try: {curTry})")
         curTry += 1
 
     return curTry, seamTuneNum
