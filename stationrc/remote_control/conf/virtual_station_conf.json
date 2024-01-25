@@ -6,6 +6,7 @@
 	"remote_control": {
 		"host": "127.0.0.1",
 		"port": 8000,
+		"logger_port": 8001,
 		"user": "rno-g"
 	}
 }

@@ -1,5 +1,5 @@
 import json
-
+import sys
 import stationrc.common
 import stationrc.remote_control
 import argparse
@@ -26,7 +26,11 @@ stationrc.common.setup_logging()
 
 station = stationrc.remote_control.VirtualStation()
 
-station.radiant_setup(version=args.version)
+try:
+    station.radiant_setup(version=args.version)
+except KeyboardInterrupt:
+    sys.exit()
+
 if args.pedestals:
     with open(f"peds_{station.get_radiant_board_mcu_uid():032x}.json", "w") as f:
         json.dump(station.radiant_pedestal_get(), f)
