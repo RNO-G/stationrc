@@ -52,6 +52,13 @@ parser.add_argument(
     action="store_true"
 )
 
+parser.add_argument(
+    "--exclude_channels",
+    type=int,
+    nargs="+",
+    default=[]
+)
+
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
@@ -80,7 +87,7 @@ else:
     for quad in range(3):
         chs, tuned = stationrc.remote_control.initial_tune_quad(
             station, quad, args.frequency, max_tries=args.max_iterations, external_signal=args.external,
-            tune_with_rolling_mean=args.average)
+            tune_with_rolling_mean=args.average, exclude_channels=args.exclude_channels)
         for ch, t in zip(chs, tuned):
             ok[ch] = t
 

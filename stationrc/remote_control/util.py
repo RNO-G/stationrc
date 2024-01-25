@@ -507,7 +507,7 @@ def get_channels_for_quad(quad):
     return None
 
 def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False, external_signal=False,
-                      tune_with_rolling_mean=False):
+                      tune_with_rolling_mean=False, exclude_channels=[]):
     """
     Time tuning algorithm
 
@@ -585,7 +585,12 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
     initial_states = []
     seamTuneNums = []
     for channel in channels:
-        istate, snum = setup_channel(station, channel)
+        if channel not in exclude_channels:
+            istate, snum = setup_channel(station, channel)
+        else:
+            istate = station.radiant_low_level_interface.calibration_specifics_get(channel)
+            snum = None
+
         initial_states.append(istate)
         seamTuneNums.append(snum)
 
