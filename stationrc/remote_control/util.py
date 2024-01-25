@@ -801,12 +801,13 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
 
     # Log last channel(s)
     if np.any(needs_tuning):
-        for channel, seam, slow in zip(np.array(channels)[needs_tuning],
+        for channel, seam, slow, seams in zip(np.array(channels)[needs_tuning],
                                        np.mean(seamSamples, axis=-1)[needs_tuning],
-                                       slowSample[needs_tuning]):
+                                       slowSample[needs_tuning],
+                                       seamSamples[needs_tuning]):
             logger.info(f"-----> LAB{channel:<2} tuned: {seam:.2f} / {slow:.2f} ps")
             if tune_with_rolling_mean:
-                logger.info(f"-----> The last five seam samples were: {seamSamples[ch_idx]} ps")
+                logger.info(f"-----> The last five seam samples were: {seams} ps")
 
     for ch_idx, channel in enumerate(channels):
         result = "failed" if failed[ch_idx] else "passed"
