@@ -33,9 +33,6 @@ except KeyboardInterrupt:
     station.rc.close_logger_connection()
     sys.exit()
 
-station.radiant_setup(version=args.version)
 if args.pedestals:
     with open(f"peds_{station.get_radiant_board_mcu_uid():032x}.json", "w") as f:
         json.dump(station.radiant_pedestal_get(), f)
-
-station.rc.close_logger_connection()

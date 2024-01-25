@@ -41,26 +41,30 @@ class RemoteControl(object):
         self.logger.info(f"Connect to socket: '{socket_add}'.")
         self.socket.connect(socket_add)
 
-        self.logger_socket = socket.socket()  # get instance
-        self.conn = None
-        # look closely. The bind() function takes tuple as argument
+        # self.logger_socket = socket.create_server((get_ip(), logger_port), reuse_port=True)  # get instance
+        self.logger_socket = socket.socket()
         self.logger_socket.bind((get_ip(), logger_port))  # bind host address and port together
-        # self.self.logger_socket = LogRecordSocketReceiver(host=get_ip(), port=8001)
+        self.logger.info(f"Listening to logging on  {get_ip()}:{logger_port}")
+
         # configure how many client the server can listen simultaneously
         self.logger_socket.listen(1)
 
         self.listening = True
         self.thr_logger = threading.Thread(
-            target=self.receive_logger,  deamon=True)  # deamon=True -> dies when program finishes
+            target=self.receive_logger,  daemon=True)  # daemon=True -> dies when program finishes
         self.thr_logger.start()
 
         self._logger_port = logger_port
-        self.set_remote_logger_handler()
+        self._has_set_logger = False
 
     def send_command(self, device, cmd, data=None):
         tx = {"device": device, "cmd": cmd}
         if data is not None:
             tx["data"] = json.dumps(data)
+
+        if device != "controller-board" and not self._has_set_logger:
+            self._has_set_logger = True
+            self.set_remote_logger_handler()
 
         self.logger.debug(f'Sending command: "{tx}".')
         self.socket.send_json(tx)
@@ -101,11 +105,13 @@ class RemoteControl(object):
         print("End of receive_logger")
 
     def set_remote_logger_handler(self):
+        self.logger.info("Set remote logger handler")
         return self.send_command("radiant-board", "add_logger_handler",
                                  {"host": get_ip(), "port": self._logger_port})
 
     def close_logger_connection(self):
-        print("Set listening to false")
+        self.logger.info("Set listening to false")
         self.listening = False
         self.conn.close()  # close the connection
         self.logger_socket.close()
+        self.logger.info("Closed connection/logger")
