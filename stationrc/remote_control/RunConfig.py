@@ -32,6 +32,9 @@ class RunConfig(object):
             self["lt"]["trigger"]["enable_rf_trigger"] = 0
             self["radiant"]["trigger"]["ext"]["enabled"] = 0
 
+    def radiant_analog_diode_vbias(self, ch, value):
+        self["radiant"]["analog"]["diode_vbias"][ch] = value
+
     def radiant_load_thresholds_from_file(self, value=True):
         if value:
             self["radiant"]["thresholds"]["load_from_threshold_file"] = 1
