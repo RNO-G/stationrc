@@ -26,6 +26,7 @@ class Station(object):
             uart_baudrate=self.station_conf["daq"]["controller_board_baudrate"],
         )
 
+        self.do_run = True
         # radiant_board is implemented as property and with set _radiant_board the first time its called.
         self._radiant_board = None
 
@@ -136,6 +137,12 @@ class Station(object):
         )
         return {"fail_mask": fail_mask}
 
+    def shut_down(self):
+        self.logger.warning("Shutting down!")
+        self.controller_board.shut_down()
+        self.do_run = False
+        self.thr_rc.join()
+
     def write_run_conf(self, data):
         with open(self.station_conf["daq"]["run_conf"], "w") as f:
             libconf.dump(data, f)
@@ -193,20 +200,23 @@ class Station(object):
         else:
             socket.send_json({"status": "UNKNOWN_DEV"})
 
-
     def _receive_remote_command(self):
         context = zmq.Context()
         socket = context.socket(zmq.REP)
         socket.bind(f'tcp://*:{self.station_conf["remote_control"]["port"]}')
+        poller = zmq.Poller()
+        poller.register(socket, zmq.POLLIN)
 
-        while True:
-            message = socket.recv_json()
-            try:
-                self._parse_message_execute_command_send_result(socket, message)
-            except DecodeError:
-                self.logger.warning("Detect cobs.DecodeError! Reinitialize radiant object ...")
-                self._radiant_board = None
+        while self.do_run:
+            events = poller.poll(1000) # Timeout after 1 second
+            if len(events) > 0 and events[0][1] == zmq.POLLIN:
+                message = events[0][0].recv_json()
                 try:
-                    self._parse_message_execute_command_send_result(socket, message)
+                    self._parse_message_execute_command_send_result(events[0][0], message)
                 except DecodeError:
-                    socket.send_json({"status": "ERROR", "data": "Catched a cobs.DecodeError"})
+                    self.logger.warning("Detect cobs.DecodeError! Reinitialize radiant object ...")
+                    self._radiant_board = None
+                    try:
+                        self._parse_message_execute_command_send_result(events[0][0], message)
+                    except DecodeError:
+                        socket.send_json({"status": "ERROR", "data": "Caught a cobs.DecodeError"})

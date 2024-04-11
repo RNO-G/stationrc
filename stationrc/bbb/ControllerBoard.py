@@ -1,5 +1,6 @@
 import logging
 import serial
+import subprocess
 import threading
 import time
 
@@ -57,6 +58,14 @@ class ControllerBoard(object):
                     result += "\n"
                 result += data
         return result
+
+    def shut_down(self):
+        self.logger.warning("Shutting down!")
+        self.do_run = False
+        self.thr_bkg.join()
+        self.uart.close()
+        subprocess.run(["stty", "-F", "/dev/ttyController", "sane"])
+        subprocess.run(["stty", "-F", "/dev/ttyController", "115200", "-echo", "igncr", "-inlcr"])
 
     def _readline(self):
         data = self.uart.read_until().decode("latin-1")
