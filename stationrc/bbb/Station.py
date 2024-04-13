@@ -13,8 +13,9 @@ from .ControllerBoard import ControllerBoard
 
 
 class Station(object):
-    def __init__(self):
+    def __init__(self, poll_timeout_ms=1000):
         self.logger = logging.getLogger("Station")
+        self.poll_timeout_ms = poll_timeout_ms
 
         with open(
             pathlib.Path(__file__).parent / "conf" / "station_conf.json", "r"
@@ -208,15 +209,16 @@ class Station(object):
         poller.register(socket, zmq.POLLIN)
 
         while self.do_run:
-            events = poller.poll(1000) # Timeout after 1 second
-            if len(events) > 0 and events[0][1] == zmq.POLLIN:
-                message = events[0][0].recv_json()
-                try:
-                    self._parse_message_execute_command_send_result(events[0][0], message)
-                except DecodeError:
-                    self.logger.warning("Detect cobs.DecodeError! Reinitialize radiant object ...")
-                    self._radiant_board = None
+            events = poller.poll(self.poll_timeout_ms)
+            for ev in events:
+                if ev[1] == zmq.POLLIN:
+                    message = ev[0].recv_json()
                     try:
-                        self._parse_message_execute_command_send_result(events[0][0], message)
+                        self._parse_message_execute_command_send_result(ev[0], message)
                     except DecodeError:
-                        socket.send_json({"status": "ERROR", "data": "Caught a cobs.DecodeError"})
+                        self.logger.warning("Detect cobs.DecodeError! Reinitialize radiant object ...")
+                        self._radiant_board = None
+                        try:
+                            self._parse_message_execute_command_send_result(ev[0], message)
+                        except DecodeError:
+                            socket.send_json({"status": "ERROR", "data": "Caught a cobs.DecodeError"})
