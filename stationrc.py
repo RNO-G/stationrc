@@ -7,9 +7,10 @@ import stationrc.common
 
 
 def handler(signum, frame):
-    if signum == signal.SIGINT:
+    if signum in [signal.SIGINT, signal.SIGTERM]:
         station.shut_down()
 
 signal.signal(signal.SIGINT, handler)
+signal.signal(signal.SIGTERM, handler)
 stationrc.common.setup_logging()
 station = stationrc.bbb.Station()
