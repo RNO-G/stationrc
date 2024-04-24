@@ -21,15 +21,15 @@ class Station(object):
         ) as f:
             self.station_conf = json.load(f)
 
-        self.controller_board = ControllerBoard(
-            uart_device=self.station_conf["daq"]["controller_board_dev"],
-            uart_baudrate=self.station_conf["daq"]["controller_board_baudrate"],
-        )
-
         # radiant_board is implemented as property and with set _radiant_board the first time its called.
         self._radiant_board = None
 
         if start_thread:
+            self.controller_board = ControllerBoard(
+                uart_device=self.station_conf["daq"]["controller_board_dev"],
+                uart_baudrate=self.station_conf["daq"]["controller_board_baudrate"],
+            )
+
             self.thr_rc = threading.Thread(
                 target=Station._receive_remote_command, args=[self])
             self.thr_rc.start()
