@@ -59,11 +59,17 @@ parser.add_argument(
     default=[]
 )
 
+parser.add_argument(
+    "-l",
+    "--local",
+    action="store_true"
+)
+
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
 
-station = stationrc.remote_control.VirtualStation()
+station = stationrc.remote_control.VirtualStation(run_local=args.local)
 
 if args.reset_radiant:
     station.reset_radiant_board()

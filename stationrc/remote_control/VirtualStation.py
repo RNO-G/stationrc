@@ -8,7 +8,7 @@ from .RemoteControl import RemoteControl
 
 
 class VirtualStation(object):
-    def __init__(self):
+    def __init__(self, run_local=False):
         self.logger = logging.getLogger("VirtualStation")
 
         with open(
@@ -19,6 +19,7 @@ class VirtualStation(object):
             self.station_conf["remote_control"]["host"],
             self.station_conf["remote_control"]["port"],
             self.station_conf["remote_control"]["logger_port"],
+            run_local=run_local
         )
         self.radiant_low_level_interface = RADIANTLowLevelInterface(
             remote_control=self.rc

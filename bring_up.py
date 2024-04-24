@@ -20,11 +20,17 @@ parser.add_argument(
     help="If true, request and store pedestals.",
 )
 
+parser.add_argument(
+    "-l",
+    "--local",
+    action="store_true"
+)
+
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
 
-station = stationrc.remote_control.VirtualStation()
+station = stationrc.remote_control.VirtualStation(run_local=args.local)
 
 try:
     station.radiant_setup(version=args.version)
