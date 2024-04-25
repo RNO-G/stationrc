@@ -1,6 +1,7 @@
 import json
 import logging
 import pathlib
+import os
 
 import stationrc.common
 from .RADIANTLowLevelInterface import RADIANTLowLevelInterface
@@ -8,13 +9,36 @@ from .RemoteControl import RemoteControl, get_ip
 
 
 class VirtualStation(object):
-    def __init__(self, run_local=False):
+    def __init__(self, force_run_mode=None):
+        """
+
+        Parameters
+        ----------
+
+        force_run_mode: None or str (Default: None)
+            Force to run locally or remotely.
+
+                * None: Automatically determine whether radiant is available
+                * "local": Force to run locally
+                * "remote": Force to run remotely
+        """
         self.logger = logging.getLogger("VirtualStation")
+
+        if force_run_mode is None:
+            # check if radiant device is available. If yes run locally
+            run_local = os.path.exists("/dev/ttyRadiant")
+        elif force_run_mode == "local":
+            run_local = True
+        elif force_run_mode == "remote":
+            run_local = False
+        else:
+            raise ValueError("Invalid value for `force_run_mode`")
 
         with open(
             pathlib.Path(__file__).parent / "conf/virtual_station_conf.json", "r"
         ) as f:
             self.station_conf = json.load(f)
+
         self.rc = RemoteControl(
             self.station_conf["remote_control"]["host"],
             self.station_conf["remote_control"]["port"],

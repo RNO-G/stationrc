@@ -47,6 +47,13 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--quad_sel",
+    type=int,
+    default=None,
+    help="",
+)
+
+parser.add_argument(
     "-a",
     "--average",
     action="store_true"
@@ -59,17 +66,11 @@ parser.add_argument(
     default=[]
 )
 
-parser.add_argument(
-    "-l",
-    "--local",
-    action="store_true"
-)
-
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
 
-station = stationrc.remote_control.VirtualStation(run_local=args.local)
+station = stationrc.remote_control.VirtualStation()
 
 if args.reset_radiant:
     station.reset_radiant_board()
