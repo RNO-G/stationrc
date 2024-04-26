@@ -34,6 +34,8 @@ class VirtualStation(object):
         else:
             raise ValueError("Invalid value for `force_run_mode`")
 
+        self.logger.info(f"Run in {'local' if run_local else 'remote'} mode.")
+
         with open(
             pathlib.Path(__file__).parent / "conf/virtual_station_conf.json", "r"
         ) as f:
