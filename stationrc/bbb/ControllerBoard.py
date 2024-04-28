@@ -1,18 +1,21 @@
 import logging
 import serial
+import subprocess
 import threading
 import time
 
 
 class ControllerBoard(object):
-    def __init__(self, uart_device, uart_baudrate=115200, background_sleep=5):
+    def __init__(
+        self, uart_device, uart_baudrate=115200, uart_timeout=0.25, background_sleep=5
+    ):
         self.logger = logging.getLogger("ControllerBoard")
 
         self.background_sleep = background_sleep
         self.do_run = True
         self.lock = threading.RLock()
         self.uart = serial.Serial(
-            port=uart_device, baudrate=uart_baudrate, timeout=0.25
+            port=uart_device, baudrate=uart_baudrate, timeout=uart_timeout
         )  # TODO: optimize timeout for commands to return a result
 
         self.thr_bkg = threading.Thread(
@@ -57,6 +60,16 @@ class ControllerBoard(object):
                     result += "\n"
                 result += data
         return result
+
+    def shut_down(self):
+        self.logger.warning("Shutting down!")
+        self.do_run = False
+        self.thr_bkg.join()
+        self.uart.close()
+        subprocess.run(["stty", "-F", self.uart.name, "sane"])
+        subprocess.run(
+            ["stty", "-F", self.uart.name, "115200", "-echo", "igncr", "-inlcr"]
+        )
 
     def _readline(self):
         data = self.uart.read_until().decode("latin-1")

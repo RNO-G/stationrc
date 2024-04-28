@@ -13,8 +13,9 @@ from .ControllerBoard import ControllerBoard
 
 
 class Station(object):
-    def __init__(self, start_thread=True):
+    def __init__(self, start_thread=True, poll_timeout_ms=1000):
         self.logger = logging.getLogger("Station")
+        self.poll_timeout_ms = poll_timeout_ms
 
         with open(
             pathlib.Path(__file__).parent / "conf" / "station_conf.json", "r"
@@ -25,6 +26,7 @@ class Station(object):
         self._radiant_board = None
 
         if start_thread:
+            self.do_run = True
             self.controller_board = ControllerBoard(
                 uart_device=self.station_conf["daq"]["controller_board_dev"],
                 uart_baudrate=self.station_conf["daq"]["controller_board_baudrate"],
@@ -139,6 +141,12 @@ class Station(object):
         )
         return {"fail_mask": fail_mask}
 
+    def shut_down(self):
+        self.logger.warning("Shutting down!")
+        self.controller_board.shut_down()
+        self.do_run = False
+        self.thr_rc.join()
+
     def write_run_conf(self, data):
         with open(self.station_conf["daq"]["run_conf"], "w") as f:
             libconf.dump(data, f)
@@ -197,25 +205,30 @@ class Station(object):
         context = zmq.Context()
         socket = context.socket(zmq.REP)
         socket.bind(f'tcp://*:{self.station_conf["remote_control"]["port"]}')
+        poller = zmq.Poller()
+        poller.register(socket, zmq.POLLIN)
 
-        while True:
-            message = socket.recv_json()
-            try:
-                status, data = self.parse_message_execute_command(message)
-                if data is not None:
-                    socket.send_json({"status": status, "data": data})
-                else:
-                    socket.send_json({"status": status})
+        while self.do_run:
+            events = poller.poll(self.poll_timeout_ms)
+            for ev in events:
+                if ev[1] == zmq.POLLIN:
+                    message = ev[0].recv_json()
+                    try:
+                        status, data = self.parse_message_execute_command(message)
+                        if data is not None:
+                            socket.send_json({"status": status, "data": data})
+                        else:
+                            socket.send_json({"status": status})
 
-            except DecodeError:
-                self.logger.warning("Detect cobs.DecodeError! Reinitialize radiant object ...")
-                self._radiant_board = None
-                try:
-                    status, data = self.parse_message_execute_command(message)
-                    if data is not None:
-                        socket.send_json({"status": status, "data": data})
-                    else:
-                        socket.send_json({"status": status})
+                    except DecodeError:
+                        self.logger.warning("Detect cobs.DecodeError! Reinitialize radiant object ...")
+                        self._radiant_board = None
+                        try:
+                            status, data = self.parse_message_execute_command(message)
+                            if data is not None:
+                                socket.send_json({"status": status, "data": data})
+                            else:
+                                socket.send_json({"status": status})
 
-                except DecodeError:
-                    socket.send_json({"status": "ERROR", "data": "Catched a cobs.DecodeError"})
+                        except DecodeError:
+                            socket.send_json({"status": "ERROR", "data": "Catched a cobs.DecodeError"})
