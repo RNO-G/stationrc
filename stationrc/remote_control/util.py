@@ -455,7 +455,9 @@ def initial_tune(station, quad, frequency=510, max_tries=50, bad_lab=False, exte
             curTry, seamTuneNums[ch_idx] = tuned_width(
                 station, channel, target_width, max_tries, seamTuneNums[ch_idx], TRY_REG_3_FOR_FAILED_DLL)
         else:
-            restore_inital_state(station, channel, initial_states[ch_idx])
+            # this check is only here necessary
+            if ch_idx in selected_channels and ch_idx not in exclude_channels:
+                restore_inital_state(station, channel, initial_states[ch_idx])
             continue
 
         if curTry == max_tries:
