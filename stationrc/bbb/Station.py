@@ -232,3 +232,9 @@ class Station(object):
 
                         except DecodeError:
                             socket.send_json({"status": "ERROR", "data": "Catched a cobs.DecodeError"})
+
+    def add_logger_handler(self, host, port="8001"):
+        handler = logging.handlers.SocketHandler(
+            host=host, port=port)
+
+        self.logger.addHandler(handler)
