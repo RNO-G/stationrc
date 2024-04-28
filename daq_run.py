@@ -4,6 +4,17 @@ import stationrc.remote_control
 import argparse
 import os
 
+def find_nuradio():
+
+    nuradio = None
+    for path in os.environ["PYTHONPATH"].split(":"):
+        if os.path.exists(f"{path}/NuRadioReco"):
+            nuradio = path
+            break
+
+    assert nuradio is not None, "Could not locate NuRadioReco"
+    return nuradio
+
 def get_run(station, args):
     run = stationrc.remote_control.Run(station)
 
@@ -76,9 +87,14 @@ if __name__ == "__main__":
         help=""
     )
 
+    parser.add_argument(
+        '-eb',
+        "--eventbrowser",
+        action="store_true",
+        help=""
+    )
 
     args = parser.parse_args()
-
 
     run = get_run(station, args)
 
@@ -87,3 +103,11 @@ if __name__ == "__main__":
     if args.filename is not None:
         print(f"mv {data_dir}/combined.root {data_dir}/{args.filename}_combined.root")
         os.system(f"mv {data_dir}/combined.root {data_dir}/{args.filename}_combined.root")
+
+    if args.eventbrowser:
+        nuradio = find_nuradio()
+        eb_exe = f"{nuradio}/NuRadioReco/eventbrowser/index.py"
+        if not os.path.exists(eb_exe):
+            raise FileExistsError("Could not locate eventbrowser")
+
+        os.system(f"python3 {eb_exe} {data_dir} --rnog_file")
