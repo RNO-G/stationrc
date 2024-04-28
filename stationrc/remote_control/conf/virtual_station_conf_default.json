@@ -1,7 +1,7 @@
 {
 	"daq": {
-		"data_directory": "/Users/felix/radiant/data/stationrc",
-		"mattak_directory": "/Users/felix/software/rnog/mattak"
+		"data_directory": "PATH/TO/DATA",
+		"mattak_directory": "PATH/TO/MATTAK"
 	},
 	"remote_control": {
 		"host": "127.0.0.1",

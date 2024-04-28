@@ -47,7 +47,7 @@ probably you have not properly pulled the git submodule in `stationrc/radiant/`.
 
 Install the same packages as on the BBB
 
-The file `stationrc/remote_control/conf/virtual_station.conf` stores configuration parameters for connecting to the BBB and paths to data and tools. You need to update it your configuration before running any of the examples.
+The file `stationrc/remote_control/conf/virtual_station.conf` stores configuration parameters for connecting to the BBB and paths to data and tools. By default the repositoy contains `stationrc/remote_control/conf/virtual_station_default.conf` which is used when `virtual_station.conf` does not exist. Copy `virtual_station_default.conf` and update it to your configuration before running any of the examples.
 
 So far, not the full API / Interface have been implemented. There is a minimal subset of commands to demonstrate the idea behind `stationrc`.
 

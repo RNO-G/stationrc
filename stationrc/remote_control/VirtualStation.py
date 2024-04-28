@@ -36,10 +36,16 @@ class VirtualStation(object):
 
         self.logger.info(f"Run in {'local' if run_local else 'remote'} mode.")
 
-        with open(
-            pathlib.Path(__file__).parent / "conf/virtual_station_conf.json", "r"
-        ) as f:
-            self.station_conf = json.load(f)
+        self.station_conf = None
+        for suffix in ["", "_default"]:
+            config_file = pathlib.Path(__file__).parent / f"conf/virtual_station_conf{suffix}.json"
+            if config_file.exists():
+                with open(config_file, "r") as f:
+                    self.station_conf = json.load(f)
+                break
+
+        if self.station_conf is None:
+            raise FileNotFoundError("Could not find a config file.")
 
         self.rc = RemoteControl(
             self.station_conf["remote_control"]["host"],
