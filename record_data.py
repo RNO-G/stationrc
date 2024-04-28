@@ -82,6 +82,11 @@ parser.add_argument(
     nargs="?"
 )
 
+parser.add_argument(
+    "--read_windows",
+    action="store_true",
+    help="Store plots"
+)
 
 args = parser.parse_args()
 
@@ -90,7 +95,8 @@ stationrc.common.setup_logging()
 station = stationrc.remote_control.VirtualStation()
 
 data = station.daq_record_data(
-    num_events=args.num_events, force_trigger=True, use_uart=args.use_UART
+    num_events=args.num_events, force_trigger=True, use_uart=args.use_UART,
+    read_header=args.read_windows,
 )
 
 if args.save or args.save_data:
@@ -138,5 +144,10 @@ if args.save_data:
     if not filename.endswith(".json"):
         filename += ".json"
 
-    with open(filename, "w") as f:
-        json.dump(data["data"]["WAVEFORM"], f)
+    if args.read_windows:
+        with open(filename, "w") as f:
+            json.dump(data["data"], f)
+
+    else:
+        with open(filename, "w") as f:
+            json.dump(data["data"]["WAVEFORM"], f)
