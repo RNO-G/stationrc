@@ -235,22 +235,18 @@ def get_station_information(station):
         seam_slow_factor = 1.03
         seam_fast_factor = 0.97
 
-        slow_slow_factor = 1.01
-        slow_fast_factor = (
-            0.95  # confusing IK but it's slow sample. make is slightly fast
-        )
+        slow_slow_factor = 1.03
+        slow_fast_factor = 0.97  # confusing IK but it's slow sample. make is slightly fast
 
-        mean_slow_factor = 1.001  # 0.1% of 416.66 means this ends when the mean is ~0.4ps off of ideal. seam sample should close enough then.
+        mean_slow_factor = 1.0005  # 0.1% of 416.66 means this ends when the mean is ~0.4ps off of ideal. seam sample should close enough then.
         mean_fast_factor = 0.999
 
     elif sample_rate == 3200:  # help tuning a bit
-        seam_slow_factor = 1.12
-        seam_fast_factor = 0.92
+        seam_slow_factor = 1.06
+        seam_fast_factor = 0.94
 
-        slow_slow_factor = 1.02
-        slow_fast_factor = (
-            0.8  # confusing IK but it's slow sample. make is slightly fast
-        )
+        slow_slow_factor = 1.03
+        slow_fast_factor = 0.93  # confusing IK but it's slow sample. make is slightly fast
 
         mean_slow_factor = 1.003  # 0.1% of 416.66 means this ends when the mean is ~0.4ps off of ideal. seam sample should close enough then.
         mean_fast_factor = 0.997
@@ -506,8 +502,37 @@ def get_channels_for_quad(quad):
         return [8, 9, 10, 11, 20, 21, 22, 23]
     return None
 
+def select_channels(station, channels_in_quad, exclude_channels, selected_channels):
+    """
+    This function allows to select the channels to be tuned based on what is configured and
+    whether `setup_channel` executed successfully
+
+    If `seamTuneNums[channel] == None`, a channel is not getting tuned
+    """
+    initial_states = []
+    seamTuneNums = []
+    if len(select_channels):
+        for channel in channels_in_quad:
+            if channel in select_channels:
+                istate, snum = setup_channel(station, channel)
+            else:
+                istate = station.radiant_low_level_interface.calibration_specifics_get(channel)
+                snum = None  # if None, channels is not tuned
+    else:
+        for channel in channels_in_quad:
+            if channel not in exclude_channels:
+                istate, snum = setup_channel(station, channel)
+            else:
+                istate = station.radiant_low_level_interface.calibration_specifics_get(channel)
+                snum = None  # if None, channels is not tuned
+
+            initial_states.append(istate)
+            seamTuneNums.append(snum)
+
+    return initial_states, seamTuneNums
+
 def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False, external_signal=False,
-                      tune_with_rolling_mean=False, exclude_channels=[]):
+                      tune_with_rolling_mean=False, exclude_channels=[], selected_channels=[]):
     """
     Time tuning algorithm
 
@@ -577,24 +602,14 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
 
     channels = get_channels_for_quad(quad)
 
+    initial_states, seamTuneNums = select_channels(station, channels, exclude_channels, selected_channels)
+    # Exclude channels based on setup or configuration
+    failed = np.array([n is None for n in seamTuneNums])
+
     logger.info(
-        f"Tuning channels {channels}. Sample rate is {sample_rate} MHz "
+        f"Tuning channels {channels[~failed]}. Sample rate is {sample_rate} MHz "
         f"(nominal sample length: {nom_sample:.2f} ps)"
     )
-
-    initial_states = []
-    seamTuneNums = []
-    for channel in channels:
-        if channel not in exclude_channels:
-            istate, snum = setup_channel(station, channel)
-        else:
-            istate = station.radiant_low_level_interface.calibration_specifics_get(channel)
-            snum = None
-
-        initial_states.append(istate)
-        seamTuneNums.append(snum)
-
-    failed = np.array([n is None for n in seamTuneNums])
 
     for ch_idx, channel in enumerate(channels):
         if not failed[ch_idx]:
@@ -632,7 +647,7 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
         if not failed[ch_idx]:
             logger.info(f"LAB{channel:<2}: starting average trim: {oldavg}")
 
-    slow_step = 25  # was 25
+    slow_step = 10  # was 25
     curTry = 0  # reset
 
     t, meanSample, _ = update_seam_and_slow(station, channels, frequency, "mean", nom_sample)
@@ -653,6 +668,14 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
     while not mean_in_range(meanSample[needs_tuning]):
         logger.info(f"Iteration {curTry} / {max_tries}")
         for ch_idx, channel in enumerate(channels):
+
+            # for ch_idx in range(len(channels)):
+            #     if needs_tuning[ch_idx] and curTry > 5:
+            #         if not 100 < meanSample[ch_idx] < 700:
+            #             logger.error(f"LAB{channels[ch_idx]:<2}: mean far off ({meanSample[ch_idx]}) "
+            #                          "even after 5 iterations. Abort ...")
+            #             needs_tuning[ch_idx] = False
+            #             failed[ch_idx] = True
 
             if curTry == max_tries and needs_tuning[ch_idx]:
                 restore_inital_state(station, channel, initial_states[ch_idx])
@@ -726,7 +749,9 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
                         logger.info(f"-----> The last three seam samples were: {seamSamples[ch_idx]} ps")
                 else:
                     logger.debug(f"-----> LAB{channel} still in range: {np.mean(seamSamples, axis=-1)[ch_idx]:.2f} / {slowSample[ch_idx]:.2f} ps")
+
                 needs_tuning[ch_idx] = False  # this means: Once it was in range it will not be updated anymore
+
             elif not needs_tuning[ch_idx]:
                 # Unless this channel faild in before this while loop it dropped out of range after
                 # is was in range

@@ -91,10 +91,19 @@ if not args.quad:
         ok[ch] = stationrc.remote_control.initial_tune(
             station, ch, args.frequency, max_tries=args.max_iterations, external_signal=args.external)
 else:
-    for quad in range(3):
+    if args.quad_sel is None:
+        for quad in range(3):
+            chs, tuned = stationrc.remote_control.initial_tune_quad(
+                station, quad, args.frequency, max_tries=args.max_iterations, external_signal=args.external,
+                tune_with_rolling_mean=args.average, exclude_channels=args.exclude_channels,
+                selected_channels=args.channel)
+            for ch, t in zip(chs, tuned):
+                ok[ch] = t
+    else:
         chs, tuned = stationrc.remote_control.initial_tune_quad(
-            station, quad, args.frequency, max_tries=args.max_iterations, external_signal=args.external,
-            tune_with_rolling_mean=args.average, exclude_channels=args.exclude_channels)
+            station, args.quad_sel, args.frequency, max_tries=args.max_iterations, external_signal=args.external,
+            tune_with_rolling_mean=args.average, exclude_channels=args.exclude_channels,
+            selected_channels=args.channel)
         for ch, t in zip(chs, tuned):
             ok[ch] = t
 
