@@ -5,7 +5,9 @@ cal_*.json
 peds_*.json
 *.zip
 # Allow to keep alternative config files
-stationrc/remote_control/conf/virtual_station_conf_*json
+stationrc/remote_control/conf/virtual_station_conf*json
+# Exculding *_default.json from being ignored
+!stationrc/remote_control/conf/virtual_station_conf_default.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
