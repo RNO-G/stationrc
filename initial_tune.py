@@ -111,5 +111,6 @@ station.radiant_low_level_interface.calibration_save()
 station.radiant_sig_gen_off()
 station.radiant_calselect(None)
 
-for ch in ok.keys():
-    print(f"ch. {ch:2d} - {'OK' if ok[ch] else 'FAILED'}")
+for ch in ok:
+    if ch in args.channel and ch not in args.exclude_channels:
+        print(f"ch. {ch:2d} - {'OK' if ok[ch] else 'FAILED'}")

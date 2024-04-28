@@ -511,23 +511,15 @@ def select_channels(station, channels_in_quad, exclude_channels, selected_channe
     """
     initial_states = []
     seamTuneNums = []
-    if len(select_channels):
-        for channel in channels_in_quad:
-            if channel in select_channels:
-                istate, snum = setup_channel(station, channel)
-            else:
-                istate = station.radiant_low_level_interface.calibration_specifics_get(channel)
-                snum = None  # if None, channels is not tuned
-    else:
-        for channel in channels_in_quad:
-            if channel not in exclude_channels:
-                istate, snum = setup_channel(station, channel)
-            else:
-                istate = station.radiant_low_level_interface.calibration_specifics_get(channel)
-                snum = None  # if None, channels is not tuned
+    for channel in channels_in_quad:
+        if channel in selected_channels and not in exclude_channels:
+            istate, snum = setup_channel(station, channel)
+        else:
+            istate = station.radiant_low_level_interface.calibration_specifics_get(channel)
+            snum = None  # if None, channels is not tuned
 
-            initial_states.append(istate)
-            seamTuneNums.append(snum)
+        initial_states.append(istate)
+        seamTuneNums.append(snum)
 
     return initial_states, seamTuneNums
 
@@ -606,11 +598,16 @@ def initial_tune_quad(station, quad, frequency=510, max_tries=50, bad_lab=False,
     # Exclude channels based on setup or configuration
     failed = np.array([n is None for n in seamTuneNums])
 
+    tmp_channels = [c for c, f in zip(channels, failed) if not f]
     logger.info(
-        f"Tuning channels {channels[~failed]}. Sample rate is {sample_rate} MHz "
+        f"Tuning channels {tmp_channels}. Sample rate is {sample_rate} MHz "
         f"(nominal sample length: {nom_sample:.2f} ps)"
     )
 
+    # stop here if no channel got selected
+    if np.all(failed):
+        return channels, [False] * len(channels)
+    
     for ch_idx, channel in enumerate(channels):
         if not failed[ch_idx]:
             curTry, seamTuneNums[ch_idx] = tuned_width(
