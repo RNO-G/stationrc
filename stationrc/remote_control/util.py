@@ -354,7 +354,7 @@ def select_channels(station, channels_in_quad, exclude_channels, selected_channe
     initial_states = []
     seamTuneNums = []
     for channel in channels_in_quad:
-        if channel in selected_channels and not in exclude_channels:
+        if channel in selected_channels and channel not in exclude_channels:
             istate, snum = setup_channel(station, channel)
         else:
             istate = station.radiant_low_level_interface.calibration_specifics_get(channel)
