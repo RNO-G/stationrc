@@ -70,6 +70,9 @@ class RemoteControl(object):
             tx["data"] = json.dumps(data)
 
         if self.run_local:
+            if device == "controller-board":
+                raise NotImplementedError("You are running locally, you can not execute "
+                                          "commannds on the controller board")
             status, data = self.station.parse_message_execute_command(tx)
             message = {"status": status}
             if data is not None:
