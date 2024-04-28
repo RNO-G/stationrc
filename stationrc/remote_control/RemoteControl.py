@@ -6,6 +6,8 @@ import pickle
 import struct
 import threading
 
+from stationrc.bbb import Station
+
 def get_ip():
     soc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     soc.settimeout(0)
@@ -31,45 +33,57 @@ def handleLogRecord(record):
 
 
 class RemoteControl(object):
-    def __init__(self, host, port, logger_port):
+    def __init__(self, host, port, logger_port, run_local=False):
         self.logger = logging.getLogger("RemoteControl")
+        self.run_local = run_local
 
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REQ)
-        socket_add = f"tcp://{host}:{port}"
-        self.logger.info(f"Connect to socket: '{socket_add}'.")
-        self.socket.connect(socket_add)
+        if self.run_local:
+            self.station = Station(start_thread=False)
+        else:
 
-        # self.logger_socket = socket.create_server((get_ip(), logger_port), reuse_port=True)  # get instance
-        self.logger_socket = socket.socket()
-        self.logger_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.logger_socket.bind(("", logger_port))  # bind to all interfaces
-        self.logger.info(f"Listening to logging on port {logger_port}")
+            self.context = zmq.Context()
+            self.socket = self.context.socket(zmq.REQ)
+            socket_add = f"tcp://{host}:{port}"
+            self.logger.info(f"Connect to socket: '{socket_add}'.")
+            self.socket.connect(socket_add)
 
-        # configure how many client the server can listen simultaneously
-        self.logger_socket.listen(1)
+            # self.logger_socket = socket.create_server((get_ip(), logger_port), reuse_port=True)  # get instance
+            self.logger_socket = socket.socket()
+            self.logger_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.logger_socket.bind(("", logger_port))  # bind to all interfaces
+            self.logger.info(f"Listening to logging on port {logger_port}")
 
-        self.listening = True
-        self.thr_logger = threading.Thread(
-            target=self.receive_logger,  daemon=True)  # daemon=True -> dies when program finishes
-        self.thr_logger.start()
+            # configure how many client the server can listen simultaneously
+            self.logger_socket.listen(1)
 
-        self._logger_port = logger_port
-        self._has_set_logger = False
+            self.listening = True
+            self.thr_logger = threading.Thread(
+                target=self.receive_logger,  daemon=True)  # daemon=True -> dies when program finishes
+            self.thr_logger.start()
+
+            self._logger_port = logger_port
+            self._has_set_logger = False
 
     def send_command(self, device, cmd, data=None):
         tx = {"device": device, "cmd": cmd}
         if data is not None:
             tx["data"] = json.dumps(data)
 
-        if device != "controller-board" and not self._has_set_logger:
-            self._has_set_logger = True
-            self.set_remote_logger_handler()
+        if self.run_local:
+            status, data = self.station.parse_message_execute_command(tx)
+            message = {"status": status}
+            if data is not None:
+                message["data"] = data
+        else:
+            if device != "controller-board" and not self._has_set_logger:
+                self._has_set_logger = True
+                self.set_remote_logger_handler()
 
-        self.logger.debug(f'Sending command: "{tx}".')
-        self.socket.send_json(tx)
+            self.logger.debug(f'Sending command: "{tx}".')
+            self.socket.send_json(tx)
 
-        message = self.socket.recv_json()
+            message = self.socket.recv_json()
+
         self.logger.debug(f'Received reply: "{message}"')
 
         if "status" not in message or message["status"] != "OK":
@@ -105,6 +119,6 @@ class RemoteControl(object):
         print("End of receive_logger")
 
     def set_remote_logger_handler(self):
-        self.logger.info("Set remote logger handler")
+        self.logger.info("Set remote logger handler for radiant")
         return self.send_command("radiant-board", "add_logger_handler",
                                  {"host": get_ip(), "port": self._logger_port})

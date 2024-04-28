@@ -13,7 +13,7 @@ from .ControllerBoard import ControllerBoard
 
 
 class Station(object):
-    def __init__(self, poll_timeout_ms=1000):
+    def __init__(self, start_thread=True, poll_timeout_ms=1000):
         self.logger = logging.getLogger("Station")
         self.poll_timeout_ms = poll_timeout_ms
 
@@ -22,19 +22,19 @@ class Station(object):
         ) as f:
             self.station_conf = json.load(f)
 
-        self.controller_board = ControllerBoard(
-            uart_device=self.station_conf["daq"]["controller_board_dev"],
-            uart_baudrate=self.station_conf["daq"]["controller_board_baudrate"],
-        )
-
-        self.do_run = True
         # radiant_board is implemented as property and with set _radiant_board the first time its called.
         self._radiant_board = None
 
-        self.thr_rc = threading.Thread(
-            target=Station._receive_remote_command, args=[self]
-        )
-        self.thr_rc.start()
+        if start_thread:
+            self.do_run = True
+            self.controller_board = ControllerBoard(
+                uart_device=self.station_conf["daq"]["controller_board_dev"],
+                uart_baudrate=self.station_conf["daq"]["controller_board_baudrate"],
+            )
+
+            self.thr_rc = threading.Thread(
+                target=Station._receive_remote_command, args=[self])
+            self.thr_rc.start()
 
     @property
     def radiant_board(self):
@@ -63,9 +63,11 @@ class Station(object):
         if num_events <= 0:
             self.logger.error("Infinite recording not supported.")
             return
+
         mask = 0
         for ch in trigger_channels:
             mask |= 1 << ch
+
         cmd = [
             self.station_conf["daq"]["radiant-try-event_executable"],
             "-N",
@@ -77,6 +79,7 @@ class Station(object):
             "-C",
             f"{trigger_coincidence}",
         ]
+
         if force_trigger:
             cmd += ["-f", "-I", f"{force_trigger_interval}"]
 
@@ -148,15 +151,15 @@ class Station(object):
         with open(self.station_conf["daq"]["run_conf"], "w") as f:
             libconf.dump(data, f)
 
-    def _parse_message_execute_command_send_result(self, socket, message):
+    def parse_message_execute_command(self, message):
         self.logger.debug(f'Received remote command: "{message}".')
         if not ("device" in message and "cmd" in message):
             self.logger.error(f'Received malformed command: "{message}".')
-            socket.send_json({"status": "ERROR"})
+            return "ERROR", None
 
         elif message["device"] == "controller-board":
             res = self.controller_board.run_command(message["cmd"])
-            socket.send_json({"status": "OK", "data": res})
+            return "OK", res
 
         elif message["device"] in [
             "radiant-board",
@@ -190,16 +193,13 @@ class Station(object):
                 else:
                     res = func()
 
-                if res is not None:
-                    socket.send_json({"status": "OK", "data": res})
-                else:
-                    socket.send_json({"status": "OK"})
+                return "OK", res
 
             else:
-                socket.send_json({"status": "UNKNOWN_CMD"})
+                return "UNKNOWN_CMD", None
 
         else:
-            socket.send_json({"status": "UNKNOWN_DEV"})
+            return "UNKNOWN_DEV", None
 
     def _receive_remote_command(self):
         context = zmq.Context()
@@ -214,11 +214,21 @@ class Station(object):
                 if ev[1] == zmq.POLLIN:
                     message = ev[0].recv_json()
                     try:
-                        self._parse_message_execute_command_send_result(ev[0], message)
+                        status, data = self.parse_message_execute_command(message)
+                        if data is not None:
+                            socket.send_json({"status": status, "data": data})
+                        else:
+                            socket.send_json({"status": status})
+
                     except DecodeError:
                         self.logger.warning("Detect cobs.DecodeError! Reinitialize radiant object ...")
                         self._radiant_board = None
                         try:
-                            self._parse_message_execute_command_send_result(ev[0], message)
+                            status, data = self.parse_message_execute_command(message)
+                            if data is not None:
+                                socket.send_json({"status": status, "data": data})
+                            else:
+                                socket.send_json({"status": status})
+
                         except DecodeError:
-                            socket.send_json({"status": "ERROR", "data": "Caught a cobs.DecodeError"})
+                            socket.send_json({"status": "ERROR", "data": "Catched a cobs.DecodeError"})

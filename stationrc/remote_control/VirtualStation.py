@@ -1,24 +1,51 @@
 import json
 import logging
 import pathlib
+import os
 
 import stationrc.common
 from .RADIANTLowLevelInterface import RADIANTLowLevelInterface
-from .RemoteControl import RemoteControl
+from .RemoteControl import RemoteControl, get_ip
 
 
 class VirtualStation(object):
-    def __init__(self):
+    def __init__(self, force_run_mode=None):
+        """
+
+        Parameters
+        ----------
+
+        force_run_mode: None or str (Default: None)
+            Force to run locally or remotely.
+
+                * None: Automatically determine whether radiant is available
+                * "local": Force to run locally
+                * "remote": Force to run remotely
+        """
         self.logger = logging.getLogger("VirtualStation")
+
+        if force_run_mode is None:
+            # check if radiant device is available. If yes run locally
+            run_local = os.path.exists("/dev/ttyRadiant")
+        elif force_run_mode == "local":
+            run_local = True
+        elif force_run_mode == "remote":
+            run_local = False
+        else:
+            raise ValueError("Invalid value for `force_run_mode`")
+
+        self.logger.info(f"Run in {'local' if run_local else 'remote'} mode.")
 
         with open(
             pathlib.Path(__file__).parent / "conf/virtual_station_conf.json", "r"
         ) as f:
             self.station_conf = json.load(f)
+
         self.rc = RemoteControl(
             self.station_conf["remote_control"]["host"],
             self.station_conf["remote_control"]["port"],
             self.station_conf["remote_control"]["logger_port"],
+            run_local=run_local
         )
         self.radiant_low_level_interface = RADIANTLowLevelInterface(
             remote_control=self.rc
@@ -123,7 +150,6 @@ class VirtualStation(object):
     def radiant_sig_gen_on(self):
         self.rc.send_command("radiant-sig-gen", "enable", {"onoff": True})
 
-
     def radiant_sig_gen_select_band(self, frequency):
         band = 0
         if frequency > 100:
@@ -160,3 +186,8 @@ class VirtualStation(object):
 
     def surface_amps_power_on(self):
         self.rc.send_command("controller-board", "#AMPS-SET 22 0")
+
+    def set_remote_logger_handler(self):
+        self.logger.info("Set remote logger handler for station")
+        return self.send_command("station", "add_logger_handler",
+                                 {"host": get_ip(), "port": self._logger_port})

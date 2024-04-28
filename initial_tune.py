@@ -47,6 +47,13 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--quad_sel",
+    type=int,
+    default=None,
+    help="",
+)
+
+parser.add_argument(
     "-a",
     "--average",
     action="store_true"
