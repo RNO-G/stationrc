@@ -43,14 +43,13 @@ parser.add_argument(
 parser.add_argument(
     "-q",
     "--quad",
-    action="store_true"
-)
-
-parser.add_argument(
-    "--quad_sel",
+    "--quads",
+    dest="quads",
     type=int,
-    default=None,
-    help="",
+    nargs="+",
+    choices=[q for q in range(3)],
+    default=[q for q in range(3)],
+    help="Quads for tuning"
 )
 
 parser.add_argument(
@@ -86,26 +85,14 @@ else:
 
 
 ok = dict()
-if not args.quad:
-    for ch in args.channel:
-        ok[ch] = stationrc.remote_control.initial_tune(
-            station, ch, args.frequency, max_tries=args.max_iterations, external_signal=args.external)
-else:
-    if args.quad_sel is None:
-        for quad in range(3):
-            chs, tuned = stationrc.remote_control.initial_tune_quad(
-                station, quad, args.frequency, max_tries=args.max_iterations, external_signal=args.external,
-                tune_with_rolling_mean=args.average, exclude_channels=args.exclude_channels,
-                selected_channels=args.channel)
-            for ch, t in zip(chs, tuned):
-                ok[ch] = t
-    else:
-        chs, tuned = stationrc.remote_control.initial_tune_quad(
-            station, args.quad_sel, args.frequency, max_tries=args.max_iterations, external_signal=args.external,
-            tune_with_rolling_mean=args.average, exclude_channels=args.exclude_channels,
-            selected_channels=args.channel)
-        for ch, t in zip(chs, tuned):
-            ok[ch] = t
+
+for quad in args.quads:
+    chs, tuned = stationrc.remote_control.initial_tune(
+        station, quad, args.frequency, max_tries=args.max_iterations, external_signal=args.external,
+        tune_with_rolling_mean=args.average, exclude_channels=args.exclude_channels,
+        selected_channels=args.channel)
+    for ch, t in zip(chs, tuned):
+        ok[ch] = t
 
 station.radiant_low_level_interface.calibration_save()
 station.radiant_sig_gen_off()
