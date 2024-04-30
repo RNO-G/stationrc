@@ -65,11 +65,18 @@ parser.add_argument(
     default=[]
 )
 
+parser.add_argument(
+    "--host",
+    type=str,
+    default=None,
+    help="Specify ip address of host. If `None`, use ip from `virtual_station_config.json`."
+)
+
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
 
-station = stationrc.remote_control.VirtualStation()
+station = stationrc.remote_control.VirtualStation(host=args.host)
 
 if args.reset_radiant:
     station.reset_radiant_board()

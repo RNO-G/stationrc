@@ -20,17 +20,25 @@ parser.add_argument(
     help="If true, request and store pedestals.",
 )
 
+parser.add_argument(
+    "--host", "--hosts",
+    dest="hosts",
+    type=str, default=[None],
+    nargs="+",
+    help="Specify ip address of host. If `None`, use ip from config in stationrc.")
+
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
 
-station = stationrc.remote_control.VirtualStation()
+for host in args.hosts:
+    station = stationrc.remote_control.VirtualStation(host=host)
 
-try:
-    station.radiant_setup(version=args.version)
-except KeyboardInterrupt:
-    sys.exit()
+    try:
+        station.radiant_setup(version=args.version)
+    except KeyboardInterrupt:
+        sys.exit()
 
-if args.pedestals:
-    with open(f"peds_{station.get_radiant_board_mcu_uid():032x}.json", "w") as f:
-        json.dump(station.radiant_pedestal_get(), f)
+    if args.pedestals:
+        with open(f"peds_{station.get_radiant_board_mcu_uid():032x}.json", "w") as f:
+            json.dump(station.radiant_pedestal_get(), f)
