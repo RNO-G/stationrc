@@ -54,7 +54,7 @@ class RemoteControl(object):
                 self.logger.info(f"Listening to logging on port {logger_port}")
 
                 # configure how many client the server can listen simultaneously
-                self.logger_socket.listen(1)
+                self.logger_socket.listen(10)
 
                 self.listening = True
                 self.thr_logger = threading.Thread(
