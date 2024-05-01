@@ -6,6 +6,7 @@ import os
 import stationrc.common
 from .RADIANTLowLevelInterface import RADIANTLowLevelInterface
 from .RemoteControl import RemoteControl, get_ip
+from .utils import convert_alias_to_ip
 
 
 class VirtualStation(object):
@@ -52,6 +53,7 @@ class VirtualStation(object):
             raise FileNotFoundError("Could not find a config file.")
 
         remote_host = host or self.station_conf["remote_control"]["host"]
+        remote_host = convert_alias_to_ip(remote_host)
         self.rc = RemoteControl(
             remote_host,
             self.station_conf["remote_control"]["port"],

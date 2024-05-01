@@ -2,11 +2,39 @@ import sys
 import numpy as np
 import mattak.Dataset
 from matplotlib import pyplot as plt
+# import re
 
 host_aliases = {
+    "st11": "10.42.1.30",
+    "radiant-017": "10.42.1.30",
 
+    "st12": "10.42.1.94",
+    "radiant-016": "10.42.1.94",
+
+    "st13": "10.42.1.188",
+    "radiant-014": "10.42.1.188",
+
+    "st14": "10.42.1.134",
+    "radiant-012": "10.42.1.134",
+
+    "st15": "10.42.1.102",
+    "radiant-011": "10.42.1.102",
+
+    "st16": "10.42.1.254",
+    "radiant-004": "10.42.1.254",
+
+    "radiant-003": "10.42.1.168"
 }
 
+def convert_alias_to_ip(host):
+
+    if host in host_aliases:
+        host = host_aliases[host]
+
+    # match = re.match(f"[0-9]{3}\.[0-9]{2}\.[0-9]{1}\.[0-9]{3}", host)
+    # assert match is not None, f"{host} is not a valid ip address"
+
+    return host
 
 def plot_run_waveforms(data_path):
 
@@ -43,4 +71,5 @@ def plot_run_waveforms(data_path):
 
 if __name__ == "__main__":
 
-    plot_run_waveforms(sys.argv[1])
+    # plot_run_waveforms(sys.argv[1])
+    convert_alias_to_ip(sys.argv[1])
