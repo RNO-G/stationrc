@@ -101,6 +101,28 @@ class RunConfig(object):
     def run_length(self, value):
         self["output"]["seconds_per_run"] = int(value)
 
+    def calib_enable_cal(self, value):
+        value = int(value)
+        assert value in [0, 1], f"Value has to be either 0 or 1 but is {value}"
+        self["calib"]["enable_cal"] = value
+
+    def calib_set_rev(self, value):
+        self["calib"]["rev"] = value
+
+    def calib_set_channel(self, value):
+        valid = ["none", "coax", "fiber0", "fiber1"]
+        assert value in valid, f"Value has to in {valid} but is {value}"
+        self["calib"]["channel"] = value
+
+    def calib_set_type(self, value):
+        valid = ["none", "pulser", "vco", "vco2"]
+        assert value in valid, f"Value has to in {valid} but is {value}"
+        self["calib"]["type"] = value
+
+    def calib_set_attenuation(self, value):
+        # Attenuation in dB (max 31.5, in steps of 0.5 dB)
+        self["calib"]["atten"] = value
+
     @staticmethod
     def load_config(filename):
         with open(filename, "r") as f:

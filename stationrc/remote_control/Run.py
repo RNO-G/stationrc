@@ -5,8 +5,12 @@ from .RunConfig import RunConfig
 
 
 class Run(object):
-    def __init__(self, station):
-        self.run_conf = RunConfig.load_default_config()
+    def __init__(self, station, config_file=None):
+        if config_file is None:
+            self.run_conf = RunConfig.load_default_config()
+        else:
+            self.run_conf = RunConfig.load_config(config_file)
+
         self.station = station
 
     def start(self, delete_src=False, rootify=False):
