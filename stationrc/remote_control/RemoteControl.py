@@ -47,22 +47,24 @@ class RemoteControl(object):
             self.logger.info(f"Connect to socket: '{socket_add}'.")
             self.socket.connect(socket_add)
 
-            # self.logger_socket = socket.create_server((get_ip(), logger_port), reuse_port=True)  # get instance
-            self.logger_socket = socket.socket()
-            self.logger_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.logger_socket.bind(("", logger_port))  # bind to all interfaces
-            self.logger.info(f"Listening to logging on port {logger_port}")
+            try:
+                self.logger_socket = socket.socket()
+                self.logger_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                self.logger_socket.bind(("", logger_port))  # bind to all interfaces
+                self.logger.info(f"Listening to logging on port {logger_port}")
 
-            # configure how many client the server can listen simultaneously
-            self.logger_socket.listen(1)
+                # configure how many client the server can listen simultaneously
+                self.logger_socket.listen(10)
 
-            self.listening = True
-            self.thr_logger = threading.Thread(
-                target=self.receive_logger,  daemon=True)  # daemon=True -> dies when program finishes
-            self.thr_logger.start()
+                self.listening = True
+                self.thr_logger = threading.Thread(
+                    target=self.receive_logger,  daemon=True)  # daemon=True -> dies when program finishes
+                self.thr_logger.start()
 
-            self._logger_port = logger_port
-            self._has_set_logger = False
+                self._logger_port = logger_port
+                self._has_set_logger = False
+            except OSError:
+                self._has_set_logger = True  # do not set logger handler on the remote side
 
     def send_command(self, device, cmd, data=None):
         tx = {"device": device, "cmd": cmd}

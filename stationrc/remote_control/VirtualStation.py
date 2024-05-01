@@ -9,18 +9,22 @@ from .RemoteControl import RemoteControl, get_ip
 
 
 class VirtualStation(object):
-    def __init__(self, force_run_mode=None):
+    def __init__(self, force_run_mode=None, host=None):
         """
 
         Parameters
         ----------
 
-        force_run_mode: None or str (Default: None)
+        force_run_mode: str, optional (Default: None)
             Force to run locally or remotely.
 
                 * None: Automatically determine whether radiant is available
                 * "local": Force to run locally
                 * "remote": Force to run remotely
+
+        host: str, optional (Default: None)
+            Specify the remote host ip address. If `None`, use ip
+            from config file.
         """
         self.logger = logging.getLogger("VirtualStation")
 
@@ -47,8 +51,9 @@ class VirtualStation(object):
         if self.station_conf is None:
             raise FileNotFoundError("Could not find a config file.")
 
+        remote_host = host or self.station_conf["remote_control"]["host"]
         self.rc = RemoteControl(
-            self.station_conf["remote_control"]["host"],
+            remote_host,
             self.station_conf["remote_control"]["port"],
             self.station_conf["remote_control"]["logger_port"],
             run_local=run_local
