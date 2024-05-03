@@ -55,12 +55,14 @@ def plot_run_waveforms(data_path):
         fig, axs = plt.subplots(4, 6, sharex=True, sharey=True, gridspec_kw=dict(hspace=0.06, wspace=0.06))
         fig2, axs2 = plt.subplots(4, 6, sharex=True, sharey=True, gridspec_kw=dict(hspace=0.06, wspace=0.06))
 
+        print(ev)
         for ch in range(24):
             ax = axs.flatten()[ch]
             ax2 = axs2.flatten()[ch]
             ax.plot(wfs[ch], label=f"Ch {ch}", lw=1)
             ax.legend(fontsize=5)
             ax.grid()
+            ax.set_xticks([500, 1500])
 
             ax2.plot(np.fft.rfftfreq(2048, 1 / 2.4) * 1000, np.abs(np.fft.rfft(wfs[ch])),
                      label=f"Ch {ch}", color="C1", lw=1)
@@ -74,10 +76,10 @@ def plot_run_waveforms(data_path):
         fig.supylabel("ADC")
 
         fig2.supxlabel("frequency / MHz")
-        fig2.supylabel("")
+        fig2.supylabel("spectrum / a.u.")
         plt.show()
 
 if __name__ == "__main__":
 
-    # plot_run_waveforms(sys.argv[1])
-    convert_alias_to_ip(sys.argv[1])
+    plot_run_waveforms(sys.argv[1])
+    # convert_alias_to_ip(sys.argv[1])
