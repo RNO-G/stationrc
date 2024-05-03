@@ -53,9 +53,9 @@ class VirtualStation(object):
             raise FileNotFoundError("Could not find a config file.")
 
         remote_host = host or self.station_conf["remote_control"]["host"]
-        remote_host = convert_alias_to_ip(remote_host)
+        self.remote_host = convert_alias_to_ip(remote_host)
         self.rc = RemoteControl(
-            remote_host,
+            self.remote_host,
             self.station_conf["remote_control"]["port"],
             self.station_conf["remote_control"]["logger_port"],
             run_local=run_local
@@ -184,7 +184,7 @@ class VirtualStation(object):
         self.proc = stationrc.common.Executor(
             cmd=cmd
             + [
-                f'{self.station_conf["remote_control"]["user"]}@{self.station_conf["remote_control"]["host"]}:{src}',
+                f'{self.station_conf["remote_control"]["user"]}@{self.remote_host}:{src}',
                 self.station_conf["daq"]["data_directory"],
             ],
             logger=self.logger,
