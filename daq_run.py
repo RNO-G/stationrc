@@ -21,16 +21,25 @@ def get_run(station, args):
     run.run_conf.radiant_load_thresholds_from_file(False)
     run.run_conf.radiant_servo_enable(False)
 
-    run.run_conf.radiant_trigger_rf0_enable(False)
-    # run.run_conf.radiant_trigger_rf0_mask([2])
-    # run.run_conf.radiant_trigger_rf0_num_coincidences(1)
+    if "rf0" in args.trigger:
+        run.run_conf.radiant_trigger_rf0_enable(True)
+        run.run_conf.radiant_trigger_rf0_num_coincidences(1)
+    else:
+        run.run_conf.radiant_trigger_rf0_enable(False)
 
     run.run_conf.radiant_trigger_rf1_enable(False)
-    run.run_conf.radiant_trigger_soft_enable(True)
-    run.run_conf.radiant_trigger_soft_interval(1 / args.frequency)  # 1.0 seconds btw. software triggers
+
+    if "soft" in args.trigger:
+        run.run_conf.radiant_trigger_soft_enable(True)
+        run.run_conf.radiant_trigger_soft_interval(1 / args.frequency)  # 1.0 seconds btw. software triggers
+    else:
+        run.run_conf.radiant_trigger_soft_enable(False)
 
     run.run_conf.flower_device_required(False)
-    run.run_conf.flower_trigger_enable(False)
+    if "flower" in args.trigger:
+        run.run_conf.flower_trigger_enable(True)
+    else:
+        run.run_conf.flower_trigger_enable(False)
 
     if args.enable_calib:
         run.run_conf.calib_enable_cal(1)
@@ -44,9 +53,12 @@ def get_run(station, args):
     if args.attenuation is not None:
         run.run_conf.calib_set_attenuation(args.attenuation)
 
+    # for ch in range(24):
+    #     run.run_conf.radiant_threshold_initial(ch, 0.9)
+
     run.run_conf.run_length(args.duration)  # 60 second run length
 
-    run.run_conf.comment(args.comment)
+    run.run_conf.comment(str(args))
 
     return run
 
@@ -74,7 +86,7 @@ if __name__ == "__main__":
         '-c',
         "--comment",
         type=str,
-        default="Test run steered from daq_run.py",
+        default="",
         nargs="?",
         help=""
     )
@@ -154,6 +166,15 @@ if __name__ == "__main__":
         type=float,
         default=None,
         help="Attenuation in dB (max 31.5, in steps of 0.5 dB)",
+    )
+
+    parser.add_argument(
+        "--trigger",
+        type=str,
+        choices=["flower", "soft", "rf0", "rf1"],
+        default=["soft"],
+        nargs="+",
+        help=""
     )
 
     args = parser.parse_args()
