@@ -11,86 +11,93 @@ def print_dict(d, prefix="   "):
 
 import argparse
 
-
-
 parser = argparse.ArgumentParser()
+
 parser.add_argument(
     "-c", "--channels",
     action="store_true",
     help="Print some results per channel"
 )
 
+parser.add_argument(
+    "--host", "--hosts",
+    dest="hosts",
+    type=str, default=[None],
+    nargs="+",
+    help="Specify ip address of host. If `None`, use ip from config in stationrc.")
+
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
 
-station = stationrc.remote_control.VirtualStation()
+for host in args.hosts:
+    station = stationrc.remote_control.VirtualStation(host=host)
 
-print(f"RADIANT Revision: {station.radiant_revision()}")
+    print(f"RADIANT Revision: {station.radiant_revision()}")
 
-print(f"MCU UID: {station.get_radiant_board_mcu_uid():032x}")
+    print(f"MCU UID: {station.get_radiant_board_mcu_uid():032x}")
 
-print(f"DNA: {station.get_radiant_board_dna():016x}")
+    print(f"DNA: {station.get_radiant_board_dna():016x}")
 
-print(f"Sample rate: {station.radiant_sample_rate()} MHz")
+    print(f"Sample rate: {station.radiant_sample_rate()} MHz")
 
-board_manager_id = stationrc.radiant.register_to_string(
-    station.radiant_low_level_interface.read_register("BM_ID")
-)
-print(f"Board Manager ID: {board_manager_id}")
-print(
-    f"Board Manager uptime: {datetime.timedelta(milliseconds=station.radiant_low_level_interface.board_manager_uptime())}"
-)
+    board_manager_id = stationrc.radiant.register_to_string(
+        station.radiant_low_level_interface.read_register("BM_ID")
+    )
+    print(f"Board Manager ID: {board_manager_id}")
+    print(
+        f"Board Manager uptime: {datetime.timedelta(milliseconds=station.radiant_low_level_interface.board_manager_uptime())}"
+    )
 
-board_manager_date_version = stationrc.radiant.DateVersion(
-    station.radiant_low_level_interface.read_register("BM_DATEVERSION")
-).toDict()
-print("Board Manager version:")
-print_dict(board_manager_date_version)
+    board_manager_date_version = stationrc.radiant.DateVersion(
+        station.radiant_low_level_interface.read_register("BM_DATEVERSION")
+    ).toDict()
+    print("Board Manager version:")
+    print_dict(board_manager_date_version)
 
-board_manager_status = station.radiant_low_level_interface.board_manager_status()
-print("Board Manager status:")
-print_dict(board_manager_status)
+    board_manager_status = station.radiant_low_level_interface.board_manager_status()
+    print("Board Manager status:")
+    print_dict(board_manager_status)
 
-board_manager_voltage_readback = (
-    station.radiant_low_level_interface.board_manager_voltage_readback()
-)
-print("Board Manager voltage readback:")
-print_dict(board_manager_voltage_readback)
+    board_manager_voltage_readback = (
+        station.radiant_low_level_interface.board_manager_voltage_readback()
+    )
+    print("Board Manager voltage readback:")
+    print_dict(board_manager_voltage_readback)
 
-quad_gpio = dict()
-for quad in range(station.radiant_low_level_interface.NUM_QUADS):
-    quad_gpio[quad] = station.radiant_low_level_interface.quad_gpio_get(quad)
-print("Quad GPIO:")
-for key in quad_gpio[0].keys():
-    line = f"   {key}:\t"
+    quad_gpio = dict()
     for quad in range(station.radiant_low_level_interface.NUM_QUADS):
-        line += f"{quad_gpio[quad][key]}"
-        if quad != station.radiant_low_level_interface.NUM_QUADS - 1:
-            line += "\t"
+        quad_gpio[quad] = station.radiant_low_level_interface.quad_gpio_get(quad)
+    print("Quad GPIO:")
+    for key in quad_gpio[0].keys():
+        line = f"   {key}:\t"
+        for quad in range(station.radiant_low_level_interface.NUM_QUADS):
+            line += f"{quad_gpio[quad][key]}"
+            if quad != station.radiant_low_level_interface.NUM_QUADS - 1:
+                line += "\t"
+        print(line)
+
+    trigger_diode_bias = dict()
+    for ch in range(station.radiant_low_level_interface.NUM_CHANNELS):
+        trigger_diode_bias[ch] = station.radiant_low_level_interface.trigger_diode_bias_get(
+            ch
+        )
+    print("Trigger diode bias (V):")
+    line = "   "
+    for ch in range(station.radiant_low_level_interface.NUM_CHANNELS):
+        line += f"{ch}: {trigger_diode_bias[ch]:.2f}"
+        if ch != station.radiant_low_level_interface.NUM_CHANNELS - 1:
+            line += ", "
     print(line)
 
-trigger_diode_bias = dict()
-for ch in range(station.radiant_low_level_interface.NUM_CHANNELS):
-    trigger_diode_bias[ch] = station.radiant_low_level_interface.trigger_diode_bias_get(
-        ch
-    )
-print("Trigger diode bias (V):")
-line = "   "
-for ch in range(station.radiant_low_level_interface.NUM_CHANNELS):
-    line += f"{ch}: {trigger_diode_bias[ch]:.2f}"
-    if ch != station.radiant_low_level_interface.NUM_CHANNELS - 1:
-        line += ", "
-print(line)
+    pedestal_voltage = station.radiant_low_level_interface.pedestal_voltage_get()
+    print("Pedestal voltage:")
+    print_dict(pedestal_voltage)
 
-pedestal_voltage = station.radiant_low_level_interface.pedestal_voltage_get()
-print("Pedestal voltage:")
-print_dict(pedestal_voltage)
+    data = station.radiant_low_level_interface.lab4d_controller_scan_dump()
+    print("Scan dump: ", ", ".join([f"{key}: {value}" for key, value in data.items()]))
 
-data = station.radiant_low_level_interface.lab4d_controller_scan_dump()
-print("Scan dump: ", ", ".join([f"{key}: {value}" for key, value in data.items()]))
-
-if args.channels:
-    for i in range(24):
-        data = station.radiant_low_level_interface.lab4d_controller_scan_dump(i)
-        print(f"Scan dump {i}: ", ", ".join([f"{key}: {value}" for key, value in data.items()]))
+    if args.channels:
+        for i in range(24):
+            data = station.radiant_low_level_interface.lab4d_controller_scan_dump(i)
+            print(f"Scan dump {i}: ", ", ".join([f"{key}: {value}" for key, value in data.items()]))
