@@ -1,8 +1,11 @@
 import sys
 import numpy as np
-import mattak.Dataset
 from matplotlib import pyplot as plt
-# import re
+
+try:
+    import mattak.Dataset
+except ImportError:
+    print("mattak not available - you can not rootify daq data")
 
 host_aliases = {
     "st11": "10.42.1.30",
