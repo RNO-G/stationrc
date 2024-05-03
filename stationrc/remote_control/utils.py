@@ -35,9 +35,12 @@ def convert_alias_to_ip(host):
 
     if host in host_aliases:
         host = host_aliases[host]
-
+    else:
+        if host not in host_aliases.values():
+            raise ValueError(f"Unknown host: {host}")
     # match = re.match(f"[0-9]{3}\.[0-9]{2}\.[0-9]{1}\.[0-9]{3}", host)
     # assert match is not None, f"{host} is not a valid ip address"
+
 
     return host
 
