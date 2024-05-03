@@ -41,6 +41,9 @@
 		},
 		"matplotlib.pyplot": {
 			"level": "WARNING"
+		},
+		"matplotlib": {
+			"level": "WARNING"
 		}
 	},
 	"root": {
