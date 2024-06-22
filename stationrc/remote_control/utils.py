@@ -1,6 +1,10 @@
 import sys
 import numpy as np
-from matplotlib import pyplot as plt
+
+try:
+    from matplotlib import pyplot as plt
+except ImportError:
+    print("matplotlib not available - you can not plot daq data")
 
 try:
     import mattak.Dataset
@@ -28,7 +32,9 @@ host_aliases = {
     "radiant-004": "10.42.1.254",
 
     "st17": "10.42.1.168",
-    "radiant-003": "10.42.1.168"
+    "radiant-003": "10.42.1.168",
+
+    "127.0.0.1": "127.0.0.1"
 }
 
 def convert_alias_to_ip(host):
@@ -37,7 +43,9 @@ def convert_alias_to_ip(host):
         host = host_aliases[host]
     else:
         if host not in host_aliases.values():
-            raise ValueError(f"Unknown host: {host}")
+            # raise ValueError(f"Unknown host: {host}")
+            print(f"Unknown host: {host}")
+
     # match = re.match(f"[0-9]{3}\.[0-9]{2}\.[0-9]{1}\.[0-9]{3}", host)
     # assert match is not None, f"{host} is not a valid ip address"
 
@@ -50,7 +58,7 @@ def plot_run_waveforms(data_path):
 
     dset.setEntries((0, dset.N()))
 
-    for ev, wfs in dset.iterate():
+    for idx, (ev, wfs) in enumerate(dset.iterate()):
 
         fig, axs = plt.subplots(4, 6, sharex=True, sharey=True, gridspec_kw=dict(hspace=0.06, wspace=0.06))
         fig2, axs2 = plt.subplots(4, 6, sharex=True, sharey=True, gridspec_kw=dict(hspace=0.06, wspace=0.06))
@@ -59,10 +67,11 @@ def plot_run_waveforms(data_path):
         for ch in range(24):
             ax = axs.flatten()[ch]
             ax2 = axs2.flatten()[ch]
-            ax.plot(wfs[ch], label=f"Ch {ch}", lw=1)
+            times = np.arange(len(wfs[ch])) / 2.4
+            ax.plot(times, wfs[ch], label=f"Ch {ch}", lw=1)
             ax.legend(fontsize=5)
             ax.grid()
-            ax.set_xticks([500, 1500])
+            # ax.set_xticks([500, 1500])
 
             ax2.plot(np.fft.rfftfreq(2048, 1 / 2.4) * 1000, np.abs(np.fft.rfft(wfs[ch])),
                      label=f"Ch {ch}", color="C1", lw=1)
@@ -72,12 +81,21 @@ def plot_run_waveforms(data_path):
             ax2.set_xlim(None, 850)
 
 
-        fig.supxlabel("samples")
+        fig.supxlabel("time / ns")
         fig.supylabel("ADC")
+        # fig.savefig(f"waveforms_{dset.run}_{idx}.png", transparent=False)
+
+        # ax.set_xlim(30, 120)
+        # fig.savefig(f"waveforms_{dset.run}_{idx}_zoom.png", transparent=False)
 
         fig2.supxlabel("frequency / MHz")
         fig2.supylabel("spectrum / a.u.")
+
+        # fig2.savefig(f"spectras_{dset.run}_{idx}.png", transparent=False)
+
+        # sys.exit()
         plt.show()
+
 
 if __name__ == "__main__":
 
