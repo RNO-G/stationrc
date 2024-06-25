@@ -69,6 +69,7 @@ def dump_binary(wfs_file, read_header=False, hdr_file=None, read_pedestal=False,
 
         packet["radiant_waveforms"] = packet["radiant_waveforms"].tolist()
         packet["lt_waveforms"] = packet["lt_waveforms"].tolist()
+        packet["digitizer_readout_delay"] = packet["digitizer_readout_delay"].tolist()
         data["WAVEFORM"].append(packet)
 
     if read_header:
