@@ -13,31 +13,31 @@
                 "radiant_thresholds",
                 "uint32",
                 ["RNO_G_NUM_RADIANT_CHANNELS"]
-            ], 
+            ],
             [
                 "radiant_scalers",
                 "uint16",
                 ["RNO_G_NUM_RADIANT_CHANNELS"]
-            ], 
+            ],
             [
                 "radiant_prescalers",
                 "uint8",
                 ["RNO_G_NUM_RADIANT_CHANNELS"]
-            ], 
+            ],
             [
                 "radiant_scaler_period",
                 "float"
-            ], 
+            ],
             [
                 "lt_trigger_thresholds",
                 "uint8",
                 ["RNO_G_NUM_LT_CHANNELS"]
-            ], 
+            ],
             [
                 "lt_servo_thresholds",
                 "uint8",
                 ["RNO_G_NUM_LT_CHANNELS"]
-            ], 
+            ],
             [
                 "lt_scalers",
                 "rno_g_lt_scalers"
@@ -169,6 +169,47 @@
                 "station",
                 "uint8"
             ]
+        ],
+        "v4": [
+            [
+                "event_number",
+                "uint32"
+            ],
+            [
+                "run_number",
+                "uint32"
+            ],
+            [
+                "radiant_nsamples",
+                "uint16"
+            ],
+            [
+                "lt_nsamples",
+                "uint16"
+            ],
+            [
+                "radiant_waveforms",
+                "int16",
+                ["RNO_G_NUM_RADIANT_CHANNELS", "$radiant_nsamples"]
+            ],
+            [
+                "lt_waveforms",
+                "uint8",
+                ["RNO_G_NUM_LT_CHANNELS", "$lt_nsamples"]
+            ],
+            [
+                "radiant_sampling_rate",
+                "uint16"
+            ],
+            [
+                "digitizer_readout_delay",
+                "uint8",
+                ["RNO_G_NUM_RADIANT_CHANNELS"]
+            ],
+            [
+                "station",
+                "uint8"
+            ]
         ]
     },
     "HEADER": {
@@ -271,7 +312,7 @@
                 "lt_nsamples",
                 "uint16"
             ],
- 
+
             [
                 "simple_trig_conf",
                 "rno_g_lt_simple_trigger_config"
