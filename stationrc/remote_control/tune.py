@@ -531,6 +531,10 @@ def initial_tune(station, quad, frequency=510, max_tries=50, bad_lab=False, exte
                 needs_tuning[ch_idx] = False  # this means: Once it was in range it will not be updated anymore
                 continue  # this channel is already in range, skip it
 
+            # Channel which are tuned already should not be adjusted further.
+            if not needs_tuning[ch_idx]:
+                continue
+
             adjust_seam(meanSample[ch_idx], station, channel, nom_sample, seamTuneNums[ch_idx], mode="mean")
             station.radiant_low_level_interface.lab4d_controller_update(channel)
 
