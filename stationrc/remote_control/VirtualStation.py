@@ -10,7 +10,7 @@ from .utils import convert_alias_to_ip
 
 
 class VirtualStation(object):
-    def __init__(self, force_run_mode=None, host=None):
+    def __init__(self, load_calibration=True, force_run_mode=None, host=None):
         """
 
         Parameters
@@ -63,6 +63,9 @@ class VirtualStation(object):
         self.radiant_low_level_interface = RADIANTLowLevelInterface(
             remote_control=self.rc
         )
+
+        if load_calibration:
+            self.radiant_low_level_interface.calibration_load()
 
     def daq_record_data(
         self,
