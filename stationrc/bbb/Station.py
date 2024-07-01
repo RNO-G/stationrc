@@ -34,7 +34,10 @@ class Station(object):
 
             self.thr_rc = threading.Thread(
                 target=Station._receive_remote_command, args=[self])
+
             self.thr_rc.start()
+
+            self._radiant_board.calib.load(self._radiant_board.uid())
 
     @property
     def radiant_board(self):
