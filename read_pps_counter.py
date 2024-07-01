@@ -22,5 +22,5 @@ for host in args.hosts:
     print("Read ppc counter for 10 seconds ...")
 
     for _ in range(10):
-        station.radiant_low_level_interface.read_register(0x30004)
+        print(station.radiant_low_level_interface.read_register(0x30004))
         time.sleep(1)
