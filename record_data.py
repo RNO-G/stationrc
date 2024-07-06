@@ -94,11 +94,19 @@ parser.add_argument(
     help="Plot all channels in an individual axis"
 )
 
+parser.add_argument(
+    "--host",
+    type=str,
+    default=None,
+    nargs="?",
+    help="Set host",
+)
+
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
 
-station = stationrc.remote_control.VirtualStation()
+station = stationrc.remote_control.VirtualStation(host=args.host)
 
 data = station.daq_record_data(
     num_events=args.num_events, force_trigger=True, use_uart=args.use_UART,
