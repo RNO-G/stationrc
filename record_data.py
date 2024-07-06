@@ -83,6 +83,14 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--label",
+    type=str,
+    default="",
+    nargs="?",
+    help="Label for the filename of the waveform plot."
+)
+
+parser.add_argument(
     "--read_windows",
     action="store_true",
     help="Store plots"
@@ -115,6 +123,9 @@ data = station.daq_record_data(
 
 if args.save or args.save_data:
     uid = station.get_radiant_board_mcu_uid()
+
+if args.label != "":
+    args.label = f"_{args.label}"
 
 for idx, ev in enumerate(data["data"]["WAVEFORM"]):
     if args.all:
@@ -157,8 +168,11 @@ for idx, ev in enumerate(data["data"]["WAVEFORM"]):
 
 
     if args.save:
-        fig.tight_layout()
-        plt.savefig(f"waveform_ch{args.channel}_{idx}_{uid:032x}", transparent=False)
+        if args.all:
+            plt.savefig(f"waveform_all_{idx}_{uid:032x}{args.label}", transparent=False)
+        else:
+            fig.tight_layout()
+            plt.savefig(f"waveform_ch{args.channel}_{idx}_{uid:032x}{args.label}", transparent=False)
 
 if not args.save and not args.save_data:
     plt.show()
