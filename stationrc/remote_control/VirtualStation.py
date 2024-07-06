@@ -10,11 +10,14 @@ from .utils import convert_alias_to_ip
 
 
 class VirtualStation(object):
-    def __init__(self, load_calibration=True, force_run_mode=None, host=None):
+    def __init__(self, load_calibration=False, force_run_mode=None, host=None):
         """
 
         Parameters
         ----------
+
+        load_calibration: bool, optional (Default: False)
+            If True, send a command to load the calibration before any other command.
 
         force_run_mode: str, optional (Default: None)
             Force to run locally or remotely.
@@ -60,6 +63,7 @@ class VirtualStation(object):
             self.station_conf["remote_control"]["logger_port"],
             run_local=run_local
         )
+
         self.radiant_low_level_interface = RADIANTLowLevelInterface(
             remote_control=self.rc
         )
