@@ -32,7 +32,7 @@ args = parser.parse_args()
 stationrc.common.setup_logging()
 
 for host in args.hosts:
-    station = stationrc.remote_control.VirtualStation(host=host)
+    station = stationrc.remote_control.VirtualStation(load_calibration=True, host=host)
 
     try:
         station.radiant_setup(version=args.version)
