@@ -37,11 +37,7 @@ class Station(object):
 
             self.thr_rc.start()
 
-<<<<<<< Updated upstream
-            self._radiant_board.calib.load(self._radiant_board.uid())
-=======
             self.radiant_board.calib.load(self._radiant_board.uid())
->>>>>>> Stashed changes
 
     @property
     def radiant_board(self):
