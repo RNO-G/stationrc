@@ -106,7 +106,7 @@ class RADIANTLowLevelInterface(object):
         return res
 
     def calibration_specifics_reset(self, channel):
-        self.rc.send_command("radiant-calib", "lab4_resetSpecifics", {"lab": channel})
+        self.rc.send_command("radiant-calib", "lab4_reset_specifics", {"lab": channel})
 
     def calibration_specifics_set(self, channel, key, value):
         self.rc.send_command(
