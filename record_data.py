@@ -129,7 +129,9 @@ if args.label != "":
 
 for idx, ev in enumerate(data["data"]["WAVEFORM"]):
     if args.all:
-        fig, axs = plt.subplots(4, 6, figsize=(12, 8), gridspec_kw=dict(hspace=0.05, wspace=0.05), sharex=True, sharey=True)
+        fig, axs = plt.subplots(4, 6, figsize=(12, 8), 
+                gridspec_kw=dict(hspace=0.05, wspace=0.05, top=0.97, right=0.99, left=0.08, bottom=0.08), 
+                sharex=True, sharey=True)
         for ch, (wvf, ax) in enumerate(zip(ev["radiant_waveforms"], axs.flatten())):
             ax.plot(wvf, marker=args.marker, label=f"ch. {ch}")
             ax.legend()
