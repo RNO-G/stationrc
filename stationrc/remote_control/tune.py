@@ -366,7 +366,7 @@ def select_channels(station, channels_in_quad, exclude_channels, selected_channe
     return initial_states, seamTuneNums
 
 def initial_tune(station, quad, frequency=510, max_tries=50, bad_lab=False, external_signal=False,
-                 tune_with_rolling_mean=False, exclude_channels=[], selected_channels=[]):
+                 tune_with_rolling_mean=False, tune_with_mean=True, exclude_channels=[], selected_channels=[]):
     """
     Time tuning algorithm
 
@@ -396,6 +396,10 @@ def initial_tune(station, quad, frequency=510, max_tries=50, bad_lab=False, exte
     tune_with_rolling_mean : bool
         If true, also require the mean over the last 3 measurements of the seam sample to be
         within the tolerance. (Default: False)
+
+    tune_with_mean : bool
+        If true, first tune using the mean width of all samples instead of the seam and slow.
+        (Default: True)
 
     Returns
     -------
@@ -506,50 +510,52 @@ def initial_tune(station, quad, frequency=510, max_tries=50, bad_lab=False, exte
                  f"{nom_sample * mean_slow_factor:.2f}] ps")
 
     needs_tuning = ~failed  # channels which already failed do not need to be tuned further
-    while not mean_in_range(meanSample[needs_tuning]):
-        logger.info(f"Iteration {curTry} / {max_tries}")
-        for ch_idx, channel in enumerate(channels):
 
-            # for ch_idx in range(len(channels)):
-            #     if needs_tuning[ch_idx] and curTry > 5:
-            #         if not 100 < meanSample[ch_idx] < 700:
-            #             logger.error(f"LAB{channels[ch_idx]:<2}: mean far off ({meanSample[ch_idx]}) "
-            #                          "even after 5 iterations. Abort ...")
-            #             needs_tuning[ch_idx] = False
-            #             failed[ch_idx] = True
+    if tune_with_mean:
+        while not mean_in_range(meanSample[needs_tuning]):
+            logger.info(f"Iteration {curTry} / {max_tries}")
+            for ch_idx, channel in enumerate(channels):
 
-            if curTry == max_tries and needs_tuning[ch_idx]:
-                restore_inital_state(station, channel, initial_states[ch_idx])
-                failed[ch_idx] = True
-                needs_tuning[ch_idx] = False  # stop here!
+                # for ch_idx in range(len(channels)):
+                #     if needs_tuning[ch_idx] and curTry > 5:
+                #         if not 100 < meanSample[ch_idx] < 700:
+                #             logger.error(f"LAB{channels[ch_idx]:<2}: mean far off ({meanSample[ch_idx]}) "
+                #                          "even after 5 iterations. Abort ...")
+                #             needs_tuning[ch_idx] = False
+                #             failed[ch_idx] = True
 
-            if mean_in_range(meanSample[ch_idx]) or not needs_tuning[ch_idx]:
-                if needs_tuning[ch_idx]:
-                    # print that only once
-                    logger.info(f"-----> LAB{channel} tuned mean: {meanSample[ch_idx]:.2f} ps")
+                if curTry == max_tries and needs_tuning[ch_idx]:
+                    restore_inital_state(station, channel, initial_states[ch_idx])
+                    failed[ch_idx] = True
+                    needs_tuning[ch_idx] = False  # stop here!
 
-                needs_tuning[ch_idx] = False  # this means: Once it was in range it will not be updated anymore
-                continue  # this channel is already in range, skip it
+                if mean_in_range(meanSample[ch_idx]) or not needs_tuning[ch_idx]:
+                    if needs_tuning[ch_idx]:
+                        # print that only once
+                        logger.info(f"-----> LAB{channel} tuned mean: {meanSample[ch_idx]:.2f} ps")
 
-            # Channel which are tuned already should not be adjusted further.
-            if not needs_tuning[ch_idx]:
-                continue
+                    needs_tuning[ch_idx] = False  # this means: Once it was in range it will not be updated anymore
+                    continue  # this channel is already in range, skip it
 
-            adjust_seam(meanSample[ch_idx], station, channel, nom_sample, seamTuneNums[ch_idx], mode="mean")
-            station.radiant_low_level_interface.lab4d_controller_update(channel)
+                # Channel which are tuned already should not be adjusted further.
+                if not needs_tuning[ch_idx]:
+                    continue
 
-        if not np.any(needs_tuning):
-            break
+                adjust_seam(meanSample[ch_idx], station, channel, nom_sample, seamTuneNums[ch_idx], mode="mean")
+                station.radiant_low_level_interface.lab4d_controller_update(channel)
 
-        # only use data from channels which still need tuning. Otherwise they could fall out of range again
-        t, meanSample, _ = update_seam_and_slow(station, channels, frequency, "mean", nom_sample)
+            if not np.any(needs_tuning):
+                break
 
-        curTry += 1
+            # only use data from channels which still need tuning. Otherwise they could fall out of range again
+            t, meanSample, _ = update_seam_and_slow(station, channels, frequency, "mean", nom_sample)
 
-    # Log last channel(s)
-    if np.any(needs_tuning):
-        for channel, ms in zip(np.array(channels)[needs_tuning], meanSample[needs_tuning]):
-            logger.info(f"-----> LAB{channel:<2} tuned mean: {ms:.2f} ps")
+            curTry += 1
+
+        # Log last channel(s)
+        if np.any(needs_tuning):
+            for channel, ms in zip(np.array(channels)[needs_tuning], meanSample[needs_tuning]):
+                logger.info(f"-----> LAB{channel:<2} tuned mean: {ms:.2f} ps")
 
     if np.all(failed):
         return channels, [False] * len(channels)

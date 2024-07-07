@@ -41,6 +41,13 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--no-mean",
+    dest="tune_with_mean",
+    action="store_false",
+    help="",
+)
+
+parser.add_argument(
     "-q",
     "--quad",
     "--quads",
@@ -96,7 +103,7 @@ ok = dict()
 for quad in args.quads:
     chs, tuned = stationrc.remote_control.initial_tune(
         station, quad, args.frequency, max_tries=args.max_iterations, external_signal=args.external,
-        tune_with_rolling_mean=args.average, exclude_channels=args.exclude_channels,
+        tune_with_rolling_mean=args.average, tune_with_mean=args.tune_with_mean, exclude_channels=args.exclude_channels,
         selected_channels=args.channel)
     for ch, t in zip(chs, tuned):
         ok[ch] = t
