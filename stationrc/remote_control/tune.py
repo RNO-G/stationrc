@@ -505,13 +505,13 @@ def initial_tune(station, quad, frequency=510, max_tries=50, bad_lab=False, exte
                 restore_inital_state(station, channel, initial_states[ch_idx])
                 failed[ch_idx] = True
 
-    logger.info(f"Use mean as proxy for seam. "
-                 f"Target range is [{nom_sample * mean_fast_factor:.2f}, "
-                 f"{nom_sample * mean_slow_factor:.2f}] ps")
-
     needs_tuning = ~failed  # channels which already failed do not need to be tuned further
 
     if tune_with_mean:
+        logger.info(f"Use mean as proxy for seam. "
+                f"Target range is [{nom_sample * mean_fast_factor:.2f}, "
+                f"{nom_sample * mean_slow_factor:.2f}] ps")
+
         while not mean_in_range(meanSample[needs_tuning]):
             logger.info(f"Iteration {curTry} / {max_tries}")
             for ch_idx, channel in enumerate(channels):

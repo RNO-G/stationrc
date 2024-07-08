@@ -44,7 +44,7 @@ parser.add_argument(
     "--no-mean",
     dest="tune_with_mean",
     action="store_false",
-    help="",
+    help="Skip tuning loop which usese the mean of samples as seam proxy.",
 )
 
 parser.add_argument(
