@@ -41,9 +41,9 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--no-mean",
+    "--tune-mean",
     dest="tune_with_mean",
-    action="store_false",
+    action="store_true",
     help="Skip tuning loop which usese the mean of samples as seam proxy.",
 )
 
@@ -83,7 +83,7 @@ args = parser.parse_args()
 
 stationrc.common.setup_logging()
 
-station = stationrc.remote_control.VirtualStation(host=args.host)
+station = stationrc.remote_control.VirtualStation(load_calibration=True, host=args.host)
 
 if args.reset_radiant:
     station.reset_radiant_board()

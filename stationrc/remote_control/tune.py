@@ -366,7 +366,7 @@ def select_channels(station, channels_in_quad, exclude_channels, selected_channe
     return initial_states, seamTuneNums
 
 def initial_tune(station, quad, frequency=510, max_tries=50, bad_lab=False, external_signal=False,
-                 tune_with_rolling_mean=False, tune_with_mean=True, exclude_channels=[], selected_channels=[]):
+                 tune_with_rolling_mean=False, tune_with_mean=False, exclude_channels=[], selected_channels=[]):
     """
     Time tuning algorithm
 
@@ -399,7 +399,7 @@ def initial_tune(station, quad, frequency=510, max_tries=50, bad_lab=False, exte
 
     tune_with_mean : bool
         If true, first tune using the mean width of all samples instead of the seam and slow.
-        (Default: True)
+        (Default: False)
 
     Returns
     -------
