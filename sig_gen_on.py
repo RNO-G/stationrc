@@ -5,6 +5,16 @@ import stationrc.remote_control
 
 
 parser = argparse.ArgumentParser()
+
+parser.add_argument(
+    "--host",
+    type=str,
+    default=None,
+    nargs="?",
+    help="Specify host. If None (default) take what ever is in "
+         "`stationrc/remote_control/conf/virtual_station_conf*.json`"
+)
+
 parser.add_argument(
     "-f",
     "--frequency",
@@ -12,6 +22,7 @@ parser.add_argument(
     default=400,
     help="sine wave generator frequency in MHz",
 )
+
 parser.add_argument(
     "-q",
     "--quad",
@@ -20,6 +31,7 @@ parser.add_argument(
     default=0,
     help="quad to connect to the signal generator",
 )
+
 parser.add_argument(
     "-b",
     "--band",
@@ -33,7 +45,7 @@ args = parser.parse_args()
 
 stationrc.common.setup_logging()
 
-station = stationrc.remote_control.VirtualStation()
+station = stationrc.remote_control.VirtualStation(host=args.host)
 
 station.radiant_sig_gen_off()
 if args.band is None:
