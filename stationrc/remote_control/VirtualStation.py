@@ -192,11 +192,11 @@ class VirtualStation(object):
 
         if target_dir is None:
             target_dir = self.station_conf["daq"]["data_directory"]
-
+        
         self.proc = stationrc.common.Executor(
             cmd=cmd
             + [
-                f'{self.station_conf["remote_control"]["user"]}@{self.remote_host}:{src}',
+                f'{self.station_conf["remote_control"]["user"]}@{self.remote_host}:{src}/',
                 target_dir,
             ],
             logger=self.logger,
