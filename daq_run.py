@@ -21,22 +21,26 @@ def get_run(station, args):
     run.run_conf.radiant_load_thresholds_from_file(False)
     run.run_conf.radiant_servo_enable(False)
 
-    if "rf0" in args.trigger:
+    if "rf0" in args.trigger or "all" in args.trigger:
         run.run_conf.radiant_trigger_rf0_enable(True)
-        run.run_conf.radiant_trigger_rf0_num_coincidences(1)
+        # run.run_conf.radiant_trigger_rf0_num_coincidences(1)
     else:
         run.run_conf.radiant_trigger_rf0_enable(False)
 
-    run.run_conf.radiant_trigger_rf1_enable(False)
+    if "rf1" in args.trigger or "all" in args.trigger:
+        run.run_conf.radiant_trigger_rf1_enable(True)
+        # run.run_conf.radiant_trigger_rf1_num_coincidences(1)
+    else:
+        run.run_conf.radiant_trigger_rf1_enable(False)
 
-    if "soft" in args.trigger:
+    if "soft" in args.trigger or "all" in args.trigger:
         run.run_conf.radiant_trigger_soft_enable(True)
         run.run_conf.radiant_trigger_soft_interval(1 / args.frequency)  # 1.0 seconds btw. software triggers
     else:
         run.run_conf.radiant_trigger_soft_enable(False)
 
     run.run_conf.flower_device_required(False)
-    if "flower" in args.trigger:
+    if "flower" in args.trigger or "all" in args.trigger:
         run.run_conf.flower_trigger_enable(True)
     else:
         run.run_conf.flower_trigger_enable(False)
@@ -171,7 +175,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--trigger",
         type=str,
-        choices=["flower", "soft", "rf0", "rf1"],
+        choices=["flower", "soft", "rf0", "rf1", "all"],
         default=["soft"],
         nargs="+",
         help=""
