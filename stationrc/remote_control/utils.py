@@ -44,8 +44,26 @@ host_aliases = {
     "st11": "10.3.0.53",
     "rno-g-011": "10.3.0.53",
 
-    "st12": "10.3.0.43",
-    "rno-g-012": "10.3.0.43",
+    "st12": "10.3.0.42",
+    "rno-g-012": "10.3.0.42",
+
+    "st13": "10.3.0.9",
+    "rno-g-013": "10.3.0.9",
+
+    "st14": "10.3.0.56",
+    "rno-g-014": "10.3.0.56",
+
+    "st21": "10.3.0.6",
+    "rno-g-021": "10.3.0.6",
+
+    "st22": "10.3.0.60",
+    "rno-g-022": "10.3.0.60",
+
+    "st23": "10.3.0.20",
+    "rno-g-023": "10.3.0.20",
+
+    "st24": "10.3.0.10",
+    "rno-g-024": "10.3.0.10",
 
     "127.0.0.1": "127.0.0.1"
 }
@@ -66,7 +84,7 @@ def convert_alias_to_ip(host):
     return host
 
 def plot_run_waveforms(data_path):
-
+    from rnog_analysis_tools.glitch_unscrambler import glitch_detection_per_event
     dset = mattak.Dataset.Dataset(station=0, run=0, data_path=data_path)
 
     dset.setEntries((0, dset.N()))
@@ -86,12 +104,13 @@ def plot_run_waveforms(data_path):
             ax.grid()
             # ax.set_xticks([500, 1500])
 
+            print(f"Ch{ch}: {glitch_detection_per_event.is_channel_scrambled(wfs[ch])}")
             ax2.plot(np.fft.rfftfreq(2048, 1 / 2.4) * 1000, np.abs(np.fft.rfft(wfs[ch])),
                      label=f"Ch {ch}", color="C1", lw=1)
             ax2.legend(fontsize=5)
             ax2.grid()
             ax2.set_yscale("log")
-            ax2.set_xlim(None, 850)
+            # ax2.set_xlim(None, 850)
 
 
         fig.supxlabel("time / ns")
