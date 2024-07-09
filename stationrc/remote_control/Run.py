@@ -1,7 +1,16 @@
 import pathlib
 
 import stationrc.common
+from stationrc.remote_control import utils
 from .RunConfig import RunConfig
+
+
+def get_host_from_ip(ip):
+    for key, value in utils.host_aliases.items():
+        if ip == value:
+            return key
+
+    return ip
 
 
 class Run(object):
@@ -18,10 +27,18 @@ class Run(object):
         res = self.station.daq_run_start()
         self.station.daq_run_wait()
         self.station.retrieve_data(res["data_dir"], delete_src=delete_src)
+
+        host = get_host_from_ip(self.station.remote_host)
         data_dir = (
             pathlib.Path(self.station.station_conf["daq"]["data_directory"])
+            / pathlib.Path(host)
             / pathlib.Path(res["data_dir"]).parts[-1]
         )
+
+        if not data_dir.exists():
+            print(f"{data_dir} does not exist. Create it ...")
+            data_dir.mkdir(parents=True)
+
         if rootify:
             stationrc.common.rootify(
                 data_dir,
