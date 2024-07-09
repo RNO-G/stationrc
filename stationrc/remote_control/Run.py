@@ -26,7 +26,6 @@ class Run(object):
         self.station.set_run_conf(self.run_conf)
         res = self.station.daq_run_start()
         self.station.daq_run_wait()
-        self.station.retrieve_data(res["data_dir"], delete_src=delete_src)
 
         host = get_host_from_ip(self.station.remote_host)
         data_dir = (
@@ -39,9 +38,12 @@ class Run(object):
             print(f"{data_dir} does not exist. Create it ...")
             data_dir.mkdir(parents=True)
 
+        self.station.retrieve_data(res["data_dir"], target_dir=data_dir, delete_src=delete_src)
+
         if rootify:
             stationrc.common.rootify(
                 data_dir,
                 self.station.station_conf["daq"]["mattak_directory"],
             )
+
         return data_dir

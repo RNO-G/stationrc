@@ -71,6 +71,8 @@ class VirtualStation(object):
         if load_calibration:
             self.radiant_low_level_interface.calibration_load()
 
+
+
     def daq_record_data(
         self,
         num_events=1,
@@ -183,16 +185,19 @@ class VirtualStation(object):
     def radiant_sig_gen_set_frequency(self, frequency):
         self.rc.send_command("radiant-sig-gen", "setFrequency", {"freq": frequency})
 
-    def retrieve_data(self, src, delete_src=False):
+    def retrieve_data(self, src, target_dir=None, delete_src=False):
         cmd = ["rsync", "--archive", "--compress", "--verbose", "--stats"]
         if delete_src:
             cmd.append("--remove-source-files")
+
+        if target_dir is None:
+            target_dir = self.station_conf["daq"]["data_directory"]
 
         self.proc = stationrc.common.Executor(
             cmd=cmd
             + [
                 f'{self.station_conf["remote_control"]["user"]}@{self.remote_host}:{src}',
-                self.station_conf["daq"]["data_directory"],
+                target_dir,
             ],
             logger=self.logger,
         )
