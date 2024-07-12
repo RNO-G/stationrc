@@ -63,6 +63,8 @@ class Station(object):
         read_header=False,
         read_pedestal=False,
     ):
+        self.logger.info("Start recording data (radiant-try-event) ...")
+
         if num_events <= 0:
             self.logger.error("Infinite recording not supported.")
             return
@@ -95,6 +97,7 @@ class Station(object):
         )
         self.acq_proc.wait()
 
+        self.logger.info("... finished.")
         data = stationrc.common.dump_binary(
             wfs_file=self.station_conf["daq"]["radiant-try-event_wfs_file"],
             read_header=read_header,
@@ -106,6 +109,7 @@ class Station(object):
         return {"data": data}
 
     def daq_run_start(self):
+        self.logger.info("Start daq run ...")
         data_dir = self.get_data_dir()
         self.acq_proc = stationrc.common.Executor(
             cmd=self.station_conf["daq"]["rno-g-acq_executable"], logger=self.logger
@@ -115,6 +119,7 @@ class Station(object):
 
     def daq_run_terminate(self):
         self.acq_proc.terminate()
+        self.logger.info("... finished daq run.")
 
     def daq_run_wait(self):
         self.acq_proc.wait()
@@ -155,7 +160,7 @@ class Station(object):
             libconf.dump(data, f)
 
     def parse_message_execute_command(self, message):
-        self.logger.debug(f'Received remote command: "{message}".')
+        self.logger.info(f'Received remote command: "{message}".')
         if not ("device" in message and "cmd" in message):
             self.logger.error(f'Received malformed command: "{message}".')
             return "ERROR", None
