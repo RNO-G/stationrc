@@ -160,7 +160,7 @@ class Station(object):
             libconf.dump(data, f)
 
     def parse_message_execute_command(self, message):
-        self.logger.info(f'Received remote command: "{message}".')
+        self.logger.debug(f'Received remote command: "{message}".')
         if not ("device" in message and "cmd" in message):
             self.logger.error(f'Received malformed command: "{message}".')
             return "ERROR", None
