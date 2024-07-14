@@ -8,7 +8,7 @@
 		"radiant-try-event_hdr_file": "/data/test/header.dat",
 		"radiant-try-event_ped_file": "/data/test/peds.dat",
 		"rno-g-acq_executable": "/rno-g/bin/rno-g-acq",
-		"run_conf": "/rno-g/cfg/acq.cfg"
+		"run_conf": "/rno-g/cfg/acq-stationrc.cfg"
 	},
 	"remote_control": {
 		"port": 8000

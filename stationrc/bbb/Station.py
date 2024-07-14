@@ -112,7 +112,8 @@ class Station(object):
         self.logger.info("Start daq run ...")
         data_dir = self.get_data_dir()
         self.acq_proc = stationrc.common.Executor(
-            cmd=self.station_conf["daq"]["rno-g-acq_executable"], logger=self.logger
+            cmd=self.station_conf["daq"]["rno-g-acq_executable"] + " " +
+            self.station_conf["daq"]["run_conf"], logger=self.logger
         )
 
         return {"data_dir": str(data_dir)}
