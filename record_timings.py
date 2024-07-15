@@ -89,11 +89,18 @@ parser.add_argument(
     nargs="?"
 )
 
+parser.add_argument(
+    "--load_calibration",
+    action="store_true",
+    help="Load the calibration. This should be not necessary if you called e.g. bring_up.py before. "
+    "Default: False"
+)
+
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
 
-station = stationrc.remote_control.VirtualStation(load_calibration=True, host=args.host)
+station = stationrc.remote_control.VirtualStation(load_calibration=args.load_calibration, host=args.host)
 if station.rc.run_local:
     host = get_hostname()
 else:
