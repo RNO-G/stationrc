@@ -83,6 +83,7 @@ parser.add_argument(
 parser.add_argument(
     '-d'
     "--data_dir",
+    dest="data_dir",
     type=str,
     default="./",
     nargs="?"
@@ -110,9 +111,7 @@ timings = {}
 for quad in range(3):
     channels = get_channels_for_quad(quad)
     t = record_for_quad(station, quad, args)
-    print(t.shape)
     for ch in channels:
-        print(ch)
         timings[str(ch)] = t[ch]
 
 date = dt.datetime.now(dt.UTC).strftime("%Y_%m_%d-%H%M")
