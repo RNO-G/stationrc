@@ -81,7 +81,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    '-d'
+    "-d",
     "--data_dir",
     dest="data_dir",
     type=str,
@@ -110,7 +110,8 @@ station.radiant_sig_gen_off()
 station.radiant_sig_gen_configure(
     pulse=False, band=args.band
 )
-station.radiant_pedestal_update()
+if args.load_calibration:
+    station.radiant_pedestal_update()
 station.radiant_sig_gen_on()
 
 timings = {}
