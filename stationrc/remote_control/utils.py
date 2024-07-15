@@ -83,6 +83,28 @@ def convert_alias_to_ip(host):
 
     return host
 
+
+def get_channels_for_quad(quad):
+    if quad == 0:
+        return [0, 1, 2, 3, 12, 13, 14, 15]
+    if quad == 1:
+        return [4, 5, 6, 7, 16, 17, 18, 19]
+    if quad == 2:
+        return [8, 9, 10, 11, 20, 21, 22, 23]
+    return None
+
+
+def quad_for_channel(channel_id):
+    if channel_id in [0, 1, 2, 3, 12, 13, 14, 15]:
+        return 0
+    elif channel_id in [4, 5, 6, 7, 16, 17, 18, 19]:
+        return 1
+    elif channel_id in [8, 9, 10, 11, 20, 21, 22, 23]:
+        return 2
+    else:
+        raise ValueError("Invalid channel id!")
+
+
 def plot_run_waveforms(data_path):
     from rnog_analysis_tools.glitch_unscrambler import glitch_detection_per_event
     dset = mattak.Dataset.Dataset(station=0, run=0, data_path=data_path)
