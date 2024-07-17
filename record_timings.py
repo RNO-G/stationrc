@@ -3,6 +3,7 @@ import numpy as np
 import datetime as dt
 import argparse
 import subprocess
+import logging
 
 import stationrc.common
 import stationrc.remote_control
@@ -116,6 +117,7 @@ station.radiant_sig_gen_on()
 
 timings = {}
 
+logging.info("Start recording timing ... ")
 for quad in range(3):
     channels = get_channels_for_quad(quad)
     t = record_for_quad(station, quad, args)
@@ -124,6 +126,7 @@ for quad in range(3):
 
 station.radiant_sig_gen_off()
 station.radiant_calselect(None)
+logging.info(" ... finished.")
 
 date = dt.datetime.now(dt.UTC).strftime("%Y_%m_%d-%H%M")
 np.savez(f"{args.data_dir}/timing_{host}_{date}.npz", **timings)
