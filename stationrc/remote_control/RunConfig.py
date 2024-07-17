@@ -32,6 +32,17 @@ class RunConfig(object):
             self["lt"]["trigger"]["enable_rf_trigger"] = 0
             self["radiant"]["trigger"]["ext"]["enabled"] = 0
 
+    def flower_pps_trigger_enable(self, value=True):
+        if value:
+            self["lt"]["trigger"]["enable_pps_trigger_sys_out"] = 1
+            self["radiant"]["trigger"]["ext"]["enabled"] = 1
+        else:
+            self["lt"]["trigger"]["enable_pps_trigger_sys_out"] = 0
+            self["radiant"]["trigger"]["ext"]["enabled"] = 0
+
+    def flower_pps_trigger_delay(self, value):
+        self["lt"]["trigger"]["pps_trigger_delay"] = value
+
     def radiant_analog_diode_vbias(self, ch, value):
         self["radiant"]["analog"]["diode_vbias"][ch] = value
 
