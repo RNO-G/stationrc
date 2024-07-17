@@ -122,5 +122,8 @@ for quad in range(3):
     for ch in channels:
         timings[str(ch)] = t[ch]
 
+station.radiant_sig_gen_off()
+station.radiant_calselect(None)
+
 date = dt.datetime.now(dt.UTC).strftime("%Y_%m_%d-%H%M")
 np.savez(f"{args.data_dir}/timing_{host}_{date}.npz", **timings)
