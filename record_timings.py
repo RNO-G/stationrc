@@ -21,14 +21,9 @@ def get_hostname():
     return sp.stdout.decode("utf-8").strip('\n')
 
 
-def record_for_quad(station, quad, args):
+def record_for_quad(station, quad, n_recordings):
 
     station.radiant_calselect(quad=quad)
-    station.radiant_sig_gen_set_frequency(
-        frequency=args.frequency
-    )
-
-    n_recordings = args.num_recordings
 
     t = np.squeeze([stationrc.remote_control.get_time_run(
         station=station, frequency=args.frequency * 1e6) for _ in range(n_recordings)])
@@ -113,15 +108,21 @@ station.radiant_sig_gen_configure(
 )
 if args.load_calibration:
     station.radiant_pedestal_update()
-station.radiant_sig_gen_on()
 
+station.radiant_sig_gen_on()
+station.radiant_sig_gen_set_frequency(
+    frequency=args.frequency
+)
+
+station.radiant_pedestal_update()  # this seems to be necessary, otherwise the timing will be all 0's ...
 timings = {}
 
 logging.info("Start recording timing ... ")
 for quad in range(3):
     channels = get_channels_for_quad(quad)
-    t = record_for_quad(station, quad, args)
+    t = record_for_quad(station, quad, args.num_recordings)
     for ch in channels:
+        logging.info(f"Channel {ch:02d}: {np.mean(t[ch])} ns")
         timings[str(ch)] = t[ch]
 
 station.radiant_sig_gen_off()
