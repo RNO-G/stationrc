@@ -16,8 +16,14 @@ signal.signal(
 
 
 def get_hostname():
-    sp = subprocess.run(["hostnamectl", "hostname"], capture_output=True)
-    sp.check_returncode()
+    try:
+        sp = subprocess.run(["hostnamectl", "hostname"], capture_output=True)
+        sp.check_returncode()
+    except subprocess.CalledProcessError:
+        # Necessary for station 24 with old bbb
+        sp = subprocess.run(["hostnamectl", "| grep hostname", "| awk '{print $3}'"], capture_output=True)
+        sp.check_returncode()
+
     return sp.stdout.decode("utf-8").strip('\n')
 
 
