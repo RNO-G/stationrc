@@ -579,7 +579,7 @@ def initial_tune(station, quad, frequency=510, max_tries=50, bad_lab=False, exte
 
     needs_tuning = ~failed # channels which already failed do not need to be tuned further
     # we always calculate the mean from seamSamples. However, if tune_with_rolling_mean == False we calculate the mean over one number ...
-    while not seam_mean_in_range(seamSamples[needs_tuning]) or not slow_in_range(slowSample[needs_tuning]):
+    while not seam_mean_in_range(seamSamples[needs_tuning]) or not slow_in_range(slowSample[needs_tuning]) or (tune_with_rolling_mean and curTry < 5):
         logger.info(f"Iteration {curTry} / {max_tries}")
 
         for channel, seam in zip(np.array(channels)[needs_tuning], seamSamples[needs_tuning]):
@@ -592,12 +592,12 @@ def initial_tune(station, quad, frequency=510, max_tries=50, bad_lab=False, exte
                 failed[ch_idx] = True
                 needs_tuning[ch_idx] = False  # stop here!
 
-            if seam_in_range(seamSamples[ch_idx]) and slow_in_range(slowSample[ch_idx]):
+            if seam_in_range(seamSamples[ch_idx]) and slow_in_range(slowSample[ch_idx]) and not (tune_with_rolling_mean and curTry < 5):
                 if needs_tuning[ch_idx]:
                     # print that only once
                     logger.info(f"-----> LAB{channel} tuned: {np.mean(seamSamples, axis=-1)[ch_idx]:.2f} / {slowSample[ch_idx]:.2f} ps")
                     if tune_with_rolling_mean:
-                        logger.info(f"-----> The last three seam samples were: {seamSamples[ch_idx]} ps")
+                        logger.info(f"-----> The last 5 seam samples were: {seamSamples[ch_idx]} ps")
                 else:
                     logger.debug(f"-----> LAB{channel} still in range: {np.mean(seamSamples, axis=-1)[ch_idx]:.2f} / {slowSample[ch_idx]:.2f} ps")
 

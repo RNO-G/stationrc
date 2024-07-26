@@ -8,11 +8,24 @@ import logging
 import stationrc.common
 import stationrc.remote_control
 from stationrc.remote_control.utils import get_channels_for_quad
-
+import os
 
 signal.signal(
     signal.SIGINT, signal.SIG_DFL
 )  # allows to close matplotlib window with CTRL+C from terminal
+
+
+def get_date_of_calibration_file(station):
+
+    directory = os.path.dirname(__file__)
+
+    file_name = f"cal_{station.radiant_low_level_interface.board_manager_uid():032x}.json"
+    calib_file = os.path.join(directory, "calib", file_name)
+
+    if os.path.exists(calib_file):
+        return dt.datetime.fromtimestamp(os.path.getmtime(calib_file)).astimezone(dt.UTC).timestamp()
+
+    return None
 
 
 def get_hostname():
@@ -135,5 +148,7 @@ station.radiant_sig_gen_off()
 station.radiant_calselect(None)
 logging.info(" ... finished.")
 
-date = dt.datetime.now(dt.UTC).strftime("%Y_%m_%d-%H%M")
-np.savez(f"{args.data_dir}/timing_{host}_{date}.npz", **timings)
+now = dt.datetime.now(dt.UTC)
+timestamp_last_calibration = get_date_of_calibration_file(station)
+
+np.savez(f"{args.data_dir}/timing_{host}_{now.strftime('%Y_%m_%d-%H%M')}.npz", time=now.timestamp(), last_calibration=timestamp_last_calibration, **timings)
