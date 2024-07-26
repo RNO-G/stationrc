@@ -592,7 +592,7 @@ def initial_tune(station, quad, frequency=510, max_tries=50, bad_lab=False, exte
                 failed[ch_idx] = True
                 needs_tuning[ch_idx] = False  # stop here!
 
-            if seam_in_range(seamSamples[ch_idx]) and slow_in_range(slowSample[ch_idx]):
+            if seam_in_range(seamSamples[ch_idx]) and slow_in_range(slowSample[ch_idx]) and not (tune_with_rolling_mean and curTry < 5):
                 if needs_tuning[ch_idx]:
                     # print that only once
                     logger.info(f"-----> LAB{channel} tuned: {np.mean(seamSamples, axis=-1)[ch_idx]:.2f} / {slowSample[ch_idx]:.2f} ps")
