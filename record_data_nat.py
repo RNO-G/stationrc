@@ -6,7 +6,6 @@ signal.signal(
 
 import argparse
 import matplotlib.pyplot as plt
-
 import stationrc.common
 import stationrc.remote_control
 
@@ -83,81 +82,33 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--label",
-    type=str,
-    default="",
-    nargs="?",
-    help="Label for the filename of the waveform plot."
-)
-
-parser.add_argument(
     "--read_windows",
     action="store_true",
     help="Store plots"
-)
-
-parser.add_argument(
-    "--all",
-    action="store_true",
-    help="Plot all channels in an individual axis"
-)
-
-parser.add_argument(
-    "--host",
-    type=str,
-    default=None,
-    nargs="?",
-    help="Set host",
 )
 
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
 
-station = stationrc.remote_control.VirtualStation(host=args.host)
+station = stationrc.remote_control.VirtualStation()
 
 data = station.daq_record_data(
-    num_events=args.num_events, force_trigger=False, use_uart=args.use_UART,
-    read_header=args.read_windows, trigger_threshold = 0.9, trigger_channels = [6]
+    num_events=args.num_events, force_trigger=False, trigger_channels=[6], use_uart=args.use_UART,
+    trigger_threshold=0.9, read_header=args.read_windows,
 )
 
 if args.save or args.save_data:
     uid = station.get_radiant_board_mcu_uid()
-
-if args.label != "":
-    args.label = f"_{args.label}"
-
+'''
 for idx, ev in enumerate(data["data"]["WAVEFORM"]):
-    if args.all:
-        fig, axs = plt.subplots(4, 6, figsize=(12, 8), 
-                gridspec_kw=dict(hspace=0.05, wspace=0.05, top=0.97, right=0.99, left=0.08, bottom=0.08), 
-                sharex=True, sharey=True)
-        for ch, (wvf, ax) in enumerate(zip(ev["radiant_waveforms"], axs.flatten())):
+    fig, ax = plt.subplots()
+    if args.channel is None:
+        for ch, wvf in enumerate(ev["radiant_waveforms"]):
             ax.plot(wvf, marker=args.marker, label=f"ch. {ch}")
-            ax.legend()
-            if args.line:
-                for i in range(16):
-                    ax.axvline(i * 128, color="k", lw=1, zorder=0)
-        fig.supxlabel("samples")
-        fig.supylabel("ADC counts")
     else:
-        fig, ax = plt.subplots()
-
-        if args.channel is None:
-            for ch, wvf in enumerate(ev["radiant_waveforms"]):
-                ax.plot(wvf, marker=args.marker, label=f"ch. {ch}")
-        else:
-            for channel in args.channel:
-                ax.plot(ev["radiant_waveforms"][channel], marker=args.marker, label=f"ch. {channel}", lw=1)
-
-        if args.line:
-            for i in range(16):
-                ax.axvline(i * 128, color="k", lw=1, zorder=0)
-
-        ax.legend()
-        ax.set_title(f"Event: {ev['event_number']}")
-        ax.set_xlabel("samples")
-        ax.set_ylabel("ADC counts")
+        for channel in args.channel:
+            ax.plot(ev["radiant_waveforms"][channel], marker=args.marker, label=f"ch. {channel}", lw=1)
 
     if args.range is not None:
         if len(args.range) == 1:
@@ -168,30 +119,44 @@ for idx, ev in enumerate(data["data"]["WAVEFORM"]):
         else:
             raise ValueError("Wrong length for args.range (only 1 or 2 are allowed)")
 
+    if args.line:
+        for i in range(16):
+            ax.axvline(i * 128, color="k", lw=1, zorder=0)
 
+    ax.legend()
+    ax.set_title(f"Event: {ev['event_number']}")
+    ax.set_xlabel("Sample")
+    ax.set_ylabel("ADC counts")
     if args.save:
-        if args.all:
-            plt.savefig(f"waveform_all_{idx}_{uid:032x}{args.label}", transparent=False)
-        else:
-            fig.tight_layout()
-            plt.savefig(f"waveform_ch{args.channel}_{idx}_{uid:032x}{args.label}", transparent=False)
+        fig.tight_layout()
+        plt.savefig(f"waveform_ch{args.channel}_{idx}_{uid:032x}", transparent=False)
 
 if not args.save and not args.save_data:
     plt.show()
-
+'''
 
 if args.save_data:
     import json
 
-    filename = args.filename or f"waveform_ch_{uid:032x}"
+    filename = args.filename or f"testdata/waveform_ch_{uid:032x}"
 
     if not filename.endswith(".json"):
         filename += ".json"
 
     if args.read_windows:
         with open(filename, "w") as f:
-            json.dump(data["data"], f)
+            if args.channel is None:
+                json.dump(data["data"], f)
+            else:
+                for channel in args.channel:
+                    json.dump(data["data"][channel], f)
 
     else:
         with open(filename, "w") as f:
-            json.dump(data["data"]["WAVEFORM"], f)
+            if args.channel is None:
+                json.dump(data["data"]["WAVEFORM"], f)
+            else:
+                #This is not a great solution because it only allows for one channel
+                for idx, ev in enumerate(data["data"]["WAVEFORM"]):
+                    ev["radiant_waveforms"] = ev["radiant_waveforms"][args.channel[0]]
+                json.dump(data["data"]["WAVEFORM"], f)
