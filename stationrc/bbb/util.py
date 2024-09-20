@@ -1,4 +1,4 @@
-from stationrc.bbb.controller_board import ControllerBoard, check_if_controller_console_is_open
+from stationrc.bbb.ControllerBoard import ControllerBoard, check_if_controller_console_is_open
 
 import sys
 import json
