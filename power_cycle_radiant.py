@@ -1,8 +1,9 @@
-from stationrc.bbb.ControllerBoard import ControllerBoard
+from stationrc.bbb.ControllerBoard import ControllerBoard, check_if_controller_console_is_open
 import stationrc.remote_control
 import stationrc.common
 
 import os
+import sys
 import json
 import pathlib
 import argparse
@@ -14,6 +15,9 @@ stationrc.common.setup_logging()
 on_bbb = os.path.exists("/dev/ttyRadiant")
 
 if on_bbb:
+
+    if check_if_controller_console_is_open():
+        sys.exit("Controller console is open. Please close it before running this script.")
 
     conf_file = pathlib.Path(__file__).parent / "stationrc" / "bbb" / "conf" / "station_conf.json"
     with open(conf_file, "r") as f:

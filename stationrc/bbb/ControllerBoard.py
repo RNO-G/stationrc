@@ -83,3 +83,14 @@ class ControllerBoard(object):
 
     def _write(self, data):
         self.uart.write((data + "\r\n").encode("latin-1"))
+
+
+def check_if_controller_console_is_open():
+    sp = subprocess.run(["ps", "-ef", "| grep controller-console | grep -v \"grep\""], capture_output=True)
+    sp.check_returncode()
+    out = sp.stdout.decode("utf-8").strip('\n')
+
+    if out == "":
+        return False
+    else:
+        return True
