@@ -86,8 +86,7 @@ class ControllerBoard(object):
 
 
 def check_if_controller_console_is_open():
-    sp = subprocess.run(["ps", "-ef", "| grep controller-console | grep -v \"grep\""], capture_output=True)
-    sp.check_returncode()
+    sp = subprocess.run("ps" + " -ef" + "| grep controller | grep -v grep", shell=True, capture_output=True)
     out = sp.stdout.decode("utf-8").strip('\n')
 
     if out == "":
