@@ -27,7 +27,7 @@ class ControllerBoard(object):
         with self.lock:
             while True:
                 data = self._readline()
-                if data == None:
+                if data is None:
                     break
                 self.logger.debug(f"Drained {data} from buffer.")
 
@@ -38,27 +38,28 @@ class ControllerBoard(object):
             with self.lock:
                 while True:
                     data = self._readline()
-                    if data == None:
+                    if data is None:
                         break
                     self.logger.info(data)
 
     def run_command(self, cmd):
         self.drain_buffer()
-        # cmd = cmd.upper()  # all command are uppercase
-        if cmd[0] != "#":  # all commands start with '#'
+        if not cmd.startswith("#"):  # all commands start with '#'
             cmd = "#" + cmd
+
         self.logger.debug(f'Sending "{cmd}" to UART')
         result = ""
         with self.lock:
             self._write(cmd)
             while True:
                 data = self._readline()
-                if data == None:
+                if data is None:
                     break
                 self.logger.info(data)
                 if result != "":
                     result += "\n"
                 result += data
+
         return result
 
     def shut_down(self):
