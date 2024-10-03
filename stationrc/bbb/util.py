@@ -1,24 +1,21 @@
 from stationrc.bbb.ControllerBoard import ControllerBoard, check_if_controller_console_is_open
 
-import sys
-import json
-import pathlib
-
+import sys, os, subprocess
 
 def power_cycle_radiant():
+
+    def run_command(cmd):
+        cmd = f'(read -n60 -t2 RESP < /dev/ttyController ; echo $RESP) & sleep 0.1 ; echo "{cmd}" > /dev/ttyController'
+        response = subprocess.run(cmd, shell = True, executable = "/bin/bash", stdout = subprocess.PIPE)
+        return response.stdout.decode("utf-8").strip()
+
     if check_if_controller_console_is_open():
             sys.exit("Controller console is open. Please close it before running this script.")
 
-    conf_file = pathlib.Path(__file__).parent / "conf" / "station_conf.json"
-    with open(conf_file, "r") as f:
-        station_conf = json.load(f)
+    if not os.path.exists("/dev/ttyController"):
+        sys.exit("Need to call this function on the BBB!")
 
-    controller_board = ControllerBoard(
-        uart_device=station_conf["daq"]["controller_board_dev"],
-        uart_baudrate=station_conf["daq"]["controller_board_baudrate"]
-    )
+    print(run_command("#RADIANT-OFF"))
+    os.system('sleep 2')
+    print(run_command("#RADIANT-ON"))
 
-    print(controller_board.run_command("#RADIANT-OFF"))
-    print(controller_board.run_command("#RADIANT-ON"))
-
-    controller_board.shut_down()
