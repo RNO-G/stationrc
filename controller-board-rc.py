@@ -27,23 +27,7 @@ args = parser.parse_args()
 on_bbb = os.path.exists("/dev/ttyRadiant")
 
 if on_bbb:
-
-    if stationrc.bbb.ControllerBoard.check_if_controller_console_is_open():
-        sys.exit("Controller console is open. Please close it before running this script.")
-
-    conf_file = pathlib.Path(__file__).parent / "stationrc" / "bbb" / "conf" / "station_conf.json"
-    with open(conf_file, "r") as f:
-        station_conf = json.load(f)
-
-    controller_board = stationrc.bbb.ControllerBoard.ControllerBoard(
-        uart_device=station_conf["daq"]["controller_board_dev"],
-        uart_baudrate=station_conf["daq"]["controller_board_baudrate"]
-    )
-
-    print(controller_board.run_command(args.command))
-
-    controller_board.shut_down()
-
+    print(stationrc.bbb.ControllerBoard.run_command_controller_board(args.command, read_response = True))    
 else:
     for host in args.hosts:
         station = stationrc.remote_control.VirtualStation(host=host)

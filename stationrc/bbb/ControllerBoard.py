@@ -84,7 +84,6 @@ class ControllerBoard(object):
     def _write(self, data):
         self.uart.write((data + "\r\n").encode("latin-1"))
 
-
 def check_if_controller_console_is_open():
     sp = subprocess.run("ps" + " -ef" + "| grep controller | grep -v grep", shell=True, capture_output=True)
     out = sp.stdout.decode("utf-8").strip('\n')
@@ -93,3 +92,16 @@ def check_if_controller_console_is_open():
         return False
     else:
         return True
+
+def run_command_controller_board(cmd, read_response = False):
+    
+    if read_response:
+        if check_if_controller_console_is_open():
+            sys.exit("Controller console is open. Please close it before calling `run_command_controller_board()`.")
+
+        cmd = f'(read -t2 RESP < /dev/ttyController ; echo $RESP) & sleep 0.1 ; echo "{cmd}" > /dev/ttyController'
+        response = subprocess.run(cmd, shell = True, executable = "/bin/bash", stdout = subprocess.PIPE)
+        return response.stdout.decode("utf-8").strip()            
+    else:
+        cmd = f'echo "{cmd}" > /dev/ttyController'
+        response = subprocess.run(cmd, shell = True, executable = "/bin/bash")
