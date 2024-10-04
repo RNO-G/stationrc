@@ -32,6 +32,4 @@ if on_bbb:
 else:
     for host in args.hosts:
         station = stationrc.remote_control.VirtualStation(host=host)
-
-        data = station.rc.send_command("controller-board", args.command)
-        print(data)
+        print(station.rc.send_command("controller-board", args.command))
