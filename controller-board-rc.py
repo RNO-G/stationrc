@@ -27,7 +27,8 @@ args = parser.parse_args()
 on_bbb = os.path.exists("/dev/ttyRadiant")
 
 if on_bbb:
-    print(stationrc.bbb.ControllerBoard.run_command_controller_board(f"#{args.command}", read_response = True))
+    cmd = args.command if args.command.startswith("#") else f"#{args.command}"
+    print(stationrc.bbb.ControllerBoard.run_command_controller_board(cmd, read_response = True))
 else:
     for host in args.hosts:
         station = stationrc.remote_control.VirtualStation(host=host)
