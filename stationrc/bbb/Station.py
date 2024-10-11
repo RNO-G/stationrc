@@ -27,10 +27,7 @@ class Station(object):
 
         if start_thread:
             self.do_run = True
-            self.controller_board = ControllerBoard(
-                uart_device=self.station_conf["daq"]["controller_board_dev"],
-                uart_baudrate=self.station_conf["daq"]["controller_board_baudrate"],
-            )
+            self.controller_board = ControllerBoard(uart_device=self.station_conf["daq"]["controller_board_dev"])
 
             self.thr_rc = threading.Thread(
                 target=Station._receive_remote_command, args=[self])

@@ -6,9 +6,7 @@ import time
 import sys
 
 class ControllerBoard(object):
-    def __init__(
-        self, uart_device, uart_baudrate=115200, uart_timeout=0.25, background_sleep=5
-    ):
+    def __init__(self, uart_device, background_sleep=5):
         self.logger = logging.getLogger("ControllerBoard")
 
         self.background_sleep = background_sleep

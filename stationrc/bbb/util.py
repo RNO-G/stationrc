@@ -1,4 +1,4 @@
-from stationrc.bbb.ControllerBoard import ControllerBoard, run_command_controller_board
+from stationrc.bbb.ControllerBoard import run_command_controller_board
 import sys, os, time
 
 def power_cycle_radiant():
