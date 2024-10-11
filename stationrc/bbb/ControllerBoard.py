@@ -1,5 +1,5 @@
 import logging
-import serial
+import os
 import subprocess
 import threading
 import time
@@ -14,9 +14,7 @@ class ControllerBoard(object):
         self.background_sleep = background_sleep
         self.do_run = True
         self.lock = threading.RLock()
-        self.uart = serial.Serial(
-            port=uart_device, baudrate=uart_baudrate, timeout=uart_timeout
-        )  # TODO: optimize timeout for commands to return a result
+        self.uart = os.open(uart_device, os.O_RDWR | os.O_NONBLOCK)
 
         self.thr_bkg = threading.Thread(
             target=ControllerBoard.receive_background_data, args=[self]
@@ -66,23 +64,20 @@ class ControllerBoard(object):
         self.logger.warning("Shutting down!")
         self.do_run = False
         self.thr_bkg.join()
-        self.uart.close()
-        subprocess.run(["stty", "-F", self.uart.name, "sane"])
-        subprocess.run(
-            ["stty", "-F", self.uart.name, "115200", "-echo", "igncr", "-inlcr"]
-        )
+        os.close(self.uart)
 
     def _readline(self):
-        data = self.uart.read_until().decode("latin-1")
-        if len(data) == 0:  # no data in buffers
+        try:
+            data = os.read(self.uart, 2048).decode("latin-1")
+        except BlockingIOError:  # no data in buffers
             return None
-        if len(data) < 2 or data[-2:] != "\r\n":
+        if len(data) < 1 or data[-1] != "\n":
             self.logger.error(f'No proper line of data received. Received "{data}".')
             return None
-        return data[:-2]  # remove trailing '\r\n'
+        return data[:-1]  # remove trailing '\n'
 
     def _write(self, data):
-        self.uart.write((data + "\r\n").encode("latin-1"))
+        os.write(self.uart, (data + "\n").encode("latin-1"))
 
 def check_if_controller_console_is_open():
     sp = subprocess.run("ps" + " -ef" + "| grep controller-console | grep -v grep", shell=True, capture_output=True)
