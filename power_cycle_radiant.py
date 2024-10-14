@@ -2,8 +2,7 @@ import stationrc.remote_control
 import stationrc.common
 import stationrc.bbb
 
-import os
-import argparse
+import os, argparse, time
 
 
 if __name__ == "__main__":
@@ -11,11 +10,12 @@ if __name__ == "__main__":
     stationrc.common.setup_logging()
 
     # Determine if we are running on the BeagleBone Black
-    on_bbb = os.path.exists("/dev/ttyRadiant")
-
-    if on_bbb:
-        stationrc.bbb.power_cycle_radiant()
-
+    if stationrc.bbb.on_bbb():
+        controller = stationrc.bbb.ControllerBoard("/dev/ttyController")
+        controller.run_command("#RADIANT-OFF", read_response = False)
+        time.sleep(2)
+        controller.run_command("#RADIANT-ON", read_response = False)
+        
     else:
         parser = argparse.ArgumentParser()
         parser.add_argument("command", type=str, help="command to be sent to station")
@@ -35,5 +35,6 @@ if __name__ == "__main__":
 
             data = station.rc.send_command("controller-board", "#RADIANT-OFF")
             print(data)
+            time.sleep(2)
             data = station.rc.send_command("controller-board", "#RADIANT-ON")
             print(data)

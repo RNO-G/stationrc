@@ -6,7 +6,7 @@ import argparse
 
 import stationrc.common
 import stationrc.remote_control
-import stationrc.bbb.ControllerBoard
+import stationrc.bbb
 
 stationrc.common.setup_logging()
 
@@ -24,11 +24,9 @@ parser.add_argument(
 args = parser.parse_args()
 
 # Determine if we are running on the BeagleBone Black
-on_bbb = os.path.exists("/dev/ttyRadiant")
-
-if on_bbb:
-    cmd = args.command if args.command.startswith("#") else f"#{args.command}"
-    print(stationrc.bbb.ControllerBoard.run_command_controller_board(cmd, read_response = True))
+if stationrc.bbb.on_bbb():
+    controller = stationrc.bbb.ControllerBoard("/dev/ttyController")
+    print(controller.run_command(args.command, read_response = True))
 else:
     for host in args.hosts:
         station = stationrc.remote_control.VirtualStation(host=host)

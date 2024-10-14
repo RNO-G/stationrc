@@ -42,7 +42,10 @@ class ControllerBoard(object):
                         break
                     self.logger.info(data)
 
-    def run_command(self, cmd):
+    def run_command(self, cmd, read_response = True):
+        if read_response and check_if_controller_console_is_open():
+            sys.exit("Controller console is open. Please close it before calling `run_command_board()` with `read_response == True`.")
+        
         self.drain_buffer()
         if not cmd.startswith("#"):  # all commands start with '#'
             cmd = "#" + cmd
@@ -51,6 +54,10 @@ class ControllerBoard(object):
         result = ""
         with self.lock:
             self._write(cmd)
+
+            if not read_response:
+                return result
+            
             while True:
                 data = self._readline()
                 if data is None:
@@ -92,16 +99,3 @@ def check_if_controller_console_is_open():
         return False
     else:
         return True
-
-def run_command_controller_board(cmd, read_response = False):
-    
-    if read_response:
-        if check_if_controller_console_is_open():
-            sys.exit("Controller console is open. Please close it before calling `run_command_controller_board()`.")
-
-        cmd = f'(read -t2 RESP < /dev/ttyController ; echo $RESP) & sleep 0.1 ; echo "{cmd}" > /dev/ttyController'
-        response = subprocess.run(cmd, shell = True, executable = "/bin/bash", stdout = subprocess.PIPE)
-        return response.stdout.decode("utf-8").strip()            
-    else:
-        cmd = f'echo "{cmd}" > /dev/ttyController'
-        response = subprocess.run(cmd, shell = True, executable = "/bin/bash")
