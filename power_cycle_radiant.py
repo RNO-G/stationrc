@@ -15,7 +15,7 @@ if __name__ == "__main__":
         controller.run_command("#RADIANT-OFF", read_response = False)
         time.sleep(2)
         controller.run_command("#RADIANT-ON", read_response = False)
-        
+        controller.shut_down()
     else:
         parser = argparse.ArgumentParser()
         parser.add_argument("command", type=str, help="command to be sent to station")
