@@ -44,7 +44,8 @@ class ControllerBoard(object):
 
     def run_command(self, cmd, read_response = True):
         if read_response and check_if_controller_console_is_open():
-            raise RuntimeError("Controller console is open. Please close it before calling `run_command_board()` with `read_response == True`.")
+            self.shut_down()
+            sys.exit("Controller console is open. Please close it before calling `run_command_board()` with `read_response == True`.")
         
         self.drain_buffer()
         if not cmd.startswith("#"):  # all commands start with '#'
