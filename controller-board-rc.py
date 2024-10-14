@@ -27,6 +27,7 @@ args = parser.parse_args()
 if stationrc.bbb.on_bbb():
     controller = stationrc.bbb.ControllerBoard("/dev/ttyController")
     print(controller.run_command(args.command, read_response = True))
+    controller.shut_down()
 else:
     for host in args.hosts:
         station = stationrc.remote_control.VirtualStation(host=host)
