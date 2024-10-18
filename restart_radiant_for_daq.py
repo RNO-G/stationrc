@@ -1,11 +1,29 @@
+import os
+import sys
 import argparse
 
+import stationrc.bbb
 import stationrc.common
 import stationrc.remote_control
 import stationrc.remote_control.tune
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument(
+    "-v",
+    "--version",
+    type=int,
+    default=3,
+    help="Specify version number of config file for CPLDs. Default: 3",
+)
+
+parser.add_argument(
+    "-p",
+    "--power_cycle",
+    action="store_true",
+    help="If true, power cycle radiant.",
+)
+
 parser.add_argument(
     "-c",
     "--channel",
@@ -73,17 +91,25 @@ parser.add_argument(
     default=[]
 )
 
-parser.add_argument(
-    "--host",
-    type=str,
-    default=None,
-    help="Specify ip address of host. If `None`, use ip from `virtual_station_config.json`."
-)
-
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
 
-station = stationrc.remote_control.VirtualStation(load_calibration=True, host=args.host)
+on_bbb = os.path.exists("/dev/ttyRadiant")
+if not on_bbb:
+    print("This script is intended to be run on the BeagleBone Black.")
+    sys.exit(1)
 
+# Power cycle Radiant
+if args.power_cycle:
+    stationrc.bbb.power_cycle_radiant()
+
+# Run bring_up.py
+station = stationrc.remote_control.VirtualStation(load_calibration=True)
+try:
+    station.radiant_setup(version=args.version)
+except KeyboardInterrupt:
+    sys.exit()
+
+# Run initial_tune.py
 stationrc.remote_control.tune.main(station, args)

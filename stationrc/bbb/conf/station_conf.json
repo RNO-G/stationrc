@@ -1,7 +1,6 @@
 {
 	"daq": {
 		"controller_board_dev": "/dev/ttyController",
-		"controller_board_baudrate": 115200,
 		"radiant_board_dev": "/dev/ttyRadiant",
 		"radiant-try-event_executable": "/home/rno-g/librno-g/build/test/radiant-try-event",
 		"radiant-try-event_wfs_file": "/data/test/wfs.dat",
