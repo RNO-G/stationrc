@@ -91,9 +91,12 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--read_windows",
-    action="store_true",
-    help="Store plots"
+    "--not_read_windows",
+    dest="read_windows",
+    action="store_false",
+    help="If set store not readout windows. "
+    "Those are needed to apply the voltage calibration. "
+    "But reading them will increase the latency."
 )
 
 parser.add_argument(
