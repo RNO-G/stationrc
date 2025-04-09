@@ -42,7 +42,7 @@ class ControllerBoard(object):
         if read_response and check_if_controller_console_is_open():
             self.shut_down()
             sys.exit("Controller console is open. Please close it before calling `run_command_board()` with `read_response == True`.")
-        
+
         self.drain_buffer()
         if not cmd.startswith("#"):  # all commands start with '#'
             cmd = "#" + cmd
@@ -54,7 +54,7 @@ class ControllerBoard(object):
 
             if not read_response:
                 return result
-            
+
             while True:
                 data = self._readline()
                 if data is None:

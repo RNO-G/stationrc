@@ -1,12 +1,20 @@
 import os
 import sys
 import json
+import pprint
 import pathlib
 import argparse
 
 import stationrc.common
 import stationrc.remote_control
 import stationrc.bbb
+
+def print_data(data, args):
+    if args.command.lower.endswith("monitor"):
+        # Pretty print the dictionary
+        pprint.pprint(data, width=120, compact=True, indent=2, sort_dicts=False)
+    else:
+        print(data)
 
 stationrc.common.setup_logging()
 
@@ -26,9 +34,11 @@ args = parser.parse_args()
 # Determine if we are running on the BeagleBone Black
 if stationrc.bbb.on_bbb():
     controller = stationrc.bbb.ControllerBoard("/dev/ttyController")
-    print(controller.run_command(args.command, read_response = True))
+    data = controller.run_command(args.command, read_response = True)
+    print_data(data, args)
     controller.shut_down()
 else:
     for host in args.hosts:
         station = stationrc.remote_control.VirtualStation(host=host)
-        print(station.rc.send_command("controller-board", args.command))
+        data = station.rc.send_command("controller-board", args.command)
+        print_data(data, args)
