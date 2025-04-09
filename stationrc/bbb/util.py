@@ -1,4 +1,4 @@
-from ControllerBoard import ControllerBoard
+from .ControllerBoard import ControllerBoard
 import sys, os, time
 
 def on_bbb():
