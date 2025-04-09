@@ -8,6 +8,40 @@ import stationrc.radiant
 logger = logging.getLogger("LAB4DTuning")
 
 
+def main(station, args):
+
+    if args.reset_radiant:
+        station.reset_radiant_board()
+
+    if args.reset:
+        for ch in args.channel:
+            station.radiant_low_level_interface.calibration_specifics_reset(ch)
+            station.radiant_low_level_interface.lab4d_controller_default(ch)
+        for ch in args.channel:
+            station.radiant_low_level_interface.lab4d_controller_automatch_phab(ch)
+    else:
+        station.radiant_low_level_interface.calibration_load()
+
+
+    ok = dict()
+
+    for quad in args.quads:
+        chs, tuned = initial_tune(
+            station, quad, args.frequency, max_tries=args.max_iterations, external_signal=args.external,
+            tune_with_rolling_mean=args.average, tune_with_mean=args.tune_with_mean, exclude_channels=args.exclude_channels,
+            selected_channels=args.channel)
+        for ch, t in zip(chs, tuned):
+            ok[ch] = t
+
+    station.radiant_low_level_interface.calibration_save()
+    station.radiant_sig_gen_off()
+    station.radiant_calselect(None)
+
+    for ch in ok:
+        if ch in args.channel and ch not in args.exclude_channels:
+            print(f"ch. {ch:2d} - {'OK' if ok[ch] else 'FAILED'}")
+
+
 def get_time_run(station, frequency, trigs_per_roll=4):
     NUM_CHANNELS = 24
 

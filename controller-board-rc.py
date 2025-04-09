@@ -1,8 +1,14 @@
+import os
+import sys
+import json
+import pathlib
 import argparse
 
 import stationrc.common
 import stationrc.remote_control
+import stationrc.bbb
 
+stationrc.common.setup_logging()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("command", type=str, help="command to be sent to station")
@@ -17,10 +23,12 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-stationrc.common.setup_logging()
-
-for host in args.hosts:
-    station = stationrc.remote_control.VirtualStation(host=host)
-
-    data = station.rc.send_command("controller-board", args.command)
-    print(data)
+# Determine if we are running on the BeagleBone Black
+if stationrc.bbb.on_bbb():
+    controller = stationrc.bbb.ControllerBoard("/dev/ttyController")
+    print(controller.run_command(args.command, read_response = True))
+    controller.shut_down()
+else:
+    for host in args.hosts:
+        station = stationrc.remote_control.VirtualStation(host=host)
+        print(station.rc.send_command("controller-board", args.command))
