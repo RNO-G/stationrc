@@ -10,7 +10,7 @@ import stationrc.remote_control
 import stationrc.bbb
 
 def print_data(data, args):
-    if args.command.lower.endswith("monitor"):
+    if args.command.lower().endswith("monitor"):
         # Pretty print the dictionary
         pprint.pprint(data, width=120, compact=True, indent=2, sort_dicts=False)
     else:
