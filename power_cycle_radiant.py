@@ -11,11 +11,7 @@ if __name__ == "__main__":
 
     # Determine if we are running on the BeagleBone Black
     if stationrc.bbb.on_bbb():
-        controller = stationrc.bbb.ControllerBoard("/dev/ttyController")
-        controller.run_command("#RADIANT-OFF", read_response = False)
-        time.sleep(2)
-        controller.run_command("#RADIANT-ON", read_response = False)
-        controller.shut_down()
+        stationrc.bbb.power_cycle_radiant()
     else:
         parser = argparse.ArgumentParser()
         parser.add_argument("command", type=str, help="command to be sent to station")

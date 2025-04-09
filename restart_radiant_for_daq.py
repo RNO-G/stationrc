@@ -95,8 +95,7 @@ args = parser.parse_args()
 
 stationrc.common.setup_logging()
 
-on_bbb = os.path.exists("/dev/ttyRadiant")
-if not on_bbb:
+if not stationrc.bbb.on_bbb:
     print("This script is intended to be run on the BeagleBone Black.")
     sys.exit(1)
 
