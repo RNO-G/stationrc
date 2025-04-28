@@ -2,6 +2,18 @@
 
 `stationrc` is a Python framework to control RNO-G stations, i.e. configure them and take data using a unified interface on a control PC without the need to log into the Beagle Bone Black and interact with all the different scripts and executables there. It is mainly developed as basis for the [radiant-test](https://github.com/RNO-G/radiant-test) repository for production testing of new RADIANT boards but might also be helpful for station calibration and characterization in the lab.
 
+`stationrc` provides collections of useful scripts to (remote)-control the RNO-G station and access the binary data:
+
+```
+scipts/
+.. operation/
+.... # Scripts for operation (tuning radiants, turning on/off amplifiers, ....)
+.. data/
+.... # Scripts to record and read data (scripts to read binary data format)
+```
+
+## Instalation
+
 The `stationrc` Python library must be available on both, the Beagle Bone Black and the control PC. `stationrc` pulls in the stationrc branch of the [radiant-python](https://github.com/RNO-G/radiant-python/tree/stationrc) as git submodule, so when cloning to your local machine you need to run
 
 ```
@@ -18,7 +30,7 @@ git submodule update
 
 The file `stationrc/common/conf/logging.conf` configures the Python logging system. It is currently configured to print *all* messages to the screen. Later, it can easily be adapted to log e.g. `DEBUG` messages only to (rotating) log files.
 
-## On the Beagle Bone Black (BBB)
+### On the Beagle Bone Black (BBB)
 
 Install the Python packages for zeroMQ (communication to control PC) and libconf (read/write DAQ configuration files):
 
@@ -43,7 +55,7 @@ AttributeError: module 'stationrc.radiant' has no attribute 'RADIANT'
 
 probably you have not properly pulled the git submodule in `stationrc/radiant/`. Did you run `git submodule update --recursive --remote` in the repository?
 
-## On the Control PC
+### On the Control PC
 
 Install the same packages as on the BBB
 
@@ -51,7 +63,7 @@ The file `stationrc/remote_control/conf/virtual_station.conf` stores configurati
 
 So far, not the full API / Interface have been implemented. There is a minimal subset of commands to demonstrate the idea behind `stationrc`.
 
-### Example scripts
+## Example scripts
 
 1. Interaction with the controller board (switching on/off the RADIANT, amplifiers, ...; getting status information). The full set of commands is listed [here](https://github.com/RNO-G/control-uC/blob/352040e116d034586e8e8c1848d80a4b9bafe6ea/docs/DESIGN.commands)
 
