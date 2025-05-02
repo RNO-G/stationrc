@@ -1,0 +1,4 @@
+[submodule "stationrc/radiant"]
+	path = stationrc/radiant
+	url = ../radiant-python
+	branch = stationrc
