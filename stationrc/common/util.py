@@ -76,22 +76,23 @@ def dump_binary(wfs_file, read_header=False, hdr_file=None, read_pedestal=False,
         headers = RNOGDataFile(hdr_file)
 
         data["HEADER"] = list()
+
         while True:
-            packet = headers.get_next_packet()
-            if packet is None:
-                break
+            try:
+                packet = headers.get_next_packet()
+                if packet is None:
+                    break
 
-            packet["radiant_start_windows"] = packet[
-                "radiant_start_windows"
-            ].tolist()
-            packet["simple_trig_conf"]["_bitfield_stuff"] = packet[
-                "simple_trig_conf"
-            ]["_bitfield_stuff"].tolist()
-            packet["trig_conf"]["_bitfield_stuff"] = packet["trig_conf"][
-                "_bitfield_stuff"
-            ].tolist()
+                packet["radiant_start_windows"] = packet["radiant_start_windows"].tolist()
+                #2024 firmware
+                #packet["simple_trig_conf"]["_bitfield_stuff"] = packet["simple_trig_conf"]["_bitfield_stuff"].tolist()
+                #packet["trig_conf"]["_bitfield_stuff"] = packet["trig_conf"]["_bitfield_stuff"].tolist()
 
-            data["HEADER"].append(packet)
+                data["HEADER"].append(packet)
+
+            except Exception as e:
+                #print(e) #UNCOMMENT TO PRINT BAD PACKET TYPES
+                continue
 
     if read_pedestal:
         pedestals = RNOGDataFile(ped_file)

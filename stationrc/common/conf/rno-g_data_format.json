@@ -321,23 +321,172 @@
                 "trig_conf",
                 "rno_g_radiant_trigger_config"
             ]
+        ],
+        "v2": [
+            [
+                "event_number",
+                "uint32"
+            ],
+            [
+                "trigger_number",
+                "uint32"
+            ],
+            [
+                "run_number",
+                "uint32"
+            ],
+
+            [
+                "trigger_mask",
+                "uint32"
+            ],
+            [
+                "trigger_value",
+                "uint32"
+            ],
+            [
+                "sys_clk",
+                "uint32"
+            ],
+
+
+            [
+                "pps_count",
+                "uint32"
+            ],
+            [
+                "readout_time_secs",
+                "uint32"
+            ],
+            [
+                "readout_time_nsecs",
+                "uint32"
+            ],
+
+
+            [
+                "readout_elapsed_nsecs",
+                "uint32"
+            ],
+            [
+                "sysclk_last_pps",
+                "uint32"
+            ],
+            [
+                "sysclk_last_last_pps",
+                "uint32"
+            ],
+
+            [
+                "raw_tinfo",
+                "uint32"
+            ],
+            [
+                "raw_evstatus",
+                "uint32"
+            ],
+
+
+            [
+                "station_number",
+                "uint8"
+            ],
+            [
+                "trigger_type",
+                "uint8"
+            ],
+
+            [
+                "flags",
+                "uint8"
+            ],
+            [
+                "pretrigger_windows",
+                "uint8"
+            ],
+
+
+            [
+                "radiant_start_windows",
+                "uint8",
+                ["RNO_G_NUM_RADIANT_CHANNELS", 2]
+            ],
+
+
+            [
+                "radiant_nsamples",
+                "uint16"
+            ],
+            [
+                "lt_nsamples",
+                "uint16"
+	    ],
+
+            [
+                "simple_trig_conf",
+                "rno_g_lt_simple_trigger_config"
+            ],
+            [
+                "radiant_trig_conf",
+                "rno_g_radiant_trigger_config"
+            ],
+            [
+                "phased_trig_conf",
+                "rno_g_lt_phased_trigger_config"
+	    ]
         ]
     },
     "rno_g_lt_simple_trigger_config": {
         "v0": [
             [
-                "_bitfield_stuff",
+                "window",
+                "uint8"
+            ],
+            [
+                "num_coinc",
                 "uint8",
-                [1]
+		[3]
+            ],
+            [
+                "vpp_mode",
+                "uint8",
+		[1]
+            ],
+            [
+                "channel_mask",
+                "uint8",
+		[4]
             ]
         ]
     },
     "rno_g_radiant_trigger_config": {
         "v0": [
             [
-                "_bitfield_stuff",
+                "mask",
+                "uint32",
+		[24]
+            ],
+            [
+                "ncoinc",
                 "uint8",
-                [19]
+		[5]
+            ],
+            [
+                "window",
+                "uint8",
+		[7]
+            ]
+        ]
+    },
+    "rno_g_lt_phased_trigger_config": {
+        "v0": [
+            [
+                "beam_mask",
+                "uint16"
+            ],
+            [
+                "phased_threshold_offset",
+                "uint16"
             ]
         ]
     },

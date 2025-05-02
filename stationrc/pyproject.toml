@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stationrc"
+version = "0.0.1"
+authors = [
+  { name="Timo Karg", email="timo.karg@desy.de" },
+]
+description = "Framework to remotely control RNO-G stations"
+requires-python = ">=3.7"
+dependencies = [
+  "cobs",
+  "libconf",
+  "matplotlib",
+  "numpy",
+  "pyzmq",
+  "serial",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[tool.setuptools]
+packages = ["stationrc"]
+
+[tool.setuptools.package-data]
+"stationrc.bbb.conf" = ["*.json"]
+"stationrc.common.conf" = ["*.json"]
+"stationrc.radiant.data" = ["*"]
+"stationrc.remote_control.conf" = [
+  "*.json",
+  "*.cfg"
+]
