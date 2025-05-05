@@ -100,3 +100,6 @@ class RNOGDataFile(RawDataFile):
 
     def read_rno_g_radiant_trigger_config(self):
         return self.read_packet("rno_g_radiant_trigger_config", version=0)
+
+    def read_rno_g_lt_phased_trigger_config(self):
+        return self.read_packet("rno_g_lt_phased_trigger_config", version=0)
