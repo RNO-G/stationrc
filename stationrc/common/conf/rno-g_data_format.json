@@ -59,6 +59,80 @@
                 "uint8",
                 [7]
             ]
+        ],
+        "v6": [
+            [
+                "when_radiant",
+                "double"
+            ],
+            [
+                "when_lt",
+                "double"
+            ],
+            [
+                "radiant_thresholds",
+                "uint32",
+                ["RNO_G_NUM_RADIANT_CHANNELS"]
+            ],
+            [
+                "radiant_scalers",
+                "uint16",
+                ["RNO_G_NUM_RADIANT_CHANNELS"]
+            ],
+            [
+                "radiant_prescalers",
+                "uint8",
+                ["RNO_G_NUM_RADIANT_CHANNELS"]
+            ],
+            [
+                "radiant_scaler_period",
+                "float"
+            ],
+            [
+                "lt_coinc_trigger_thresholds",
+                "uint8",
+                ["RNO_G_NUM_LT_CHANNELS"]
+            ],
+            [
+                "lt_coinc_servo_thresholds",
+                "uint8",
+                ["RNO_G_NUM_LT_CHANNELS"]
+            ],
+            [
+                "lt_phased_trigger_thresholds",
+                "uint8",
+                ["RNO_G_NUM_LT_BEAMS"]
+            ],
+            [
+                "lt_phased_servo_thresholds",
+                "uint8",
+                ["RNO_G_NUM_LT_BEAMS"]
+            ],
+            [
+                "lt_phased_threshold_offset",
+                "uint16"
+            ],
+            [
+                "lt_scalers",
+                "rno_g_lt_scalers"
+            ],
+            [
+                "radiant_voltages",
+                "rno_g_radiant_voltages"
+            ],
+            [
+                "cal",
+                "rno_g_calpulser_info"
+            ],
+            [
+                "station",
+                "uint8"
+            ],
+            [
+                "_padding?",
+                "uint8",
+                [7]
+            ]
         ]
     },
     "RNO-G_CALPULSER_INFO": {
@@ -67,6 +141,28 @@
                 "_bitfield_stuff",
                 "uint16",
                 [3]
+            ]
+        ],
+        "v1": [
+            [
+                "T_times_16",
+                "uint16"
+            ],
+            [
+                "mode",
+                "uint8"
+            ],
+            [
+                "enabled",
+                "uint8"
+            ],
+            [
+                "atten_times_2",
+                "uint8"
+            ],
+            [
+                "out",
+                "uint8"
             ]
         ]
     },
