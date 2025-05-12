@@ -106,11 +106,18 @@ def quad_for_channel(channel_id):
 
 
 def plot_run_waveforms(data_path):
+
+    import os
+    
+    plot_path = os.path.join(data_path, "plots")
+    if not os.path.exists(plot_path):
+        os.makedirs(plot_path)
+    
     from rnog_analysis_tools.glitch_unscrambler import glitch_detection_per_event
     dset = mattak.Dataset.Dataset(station=0, run=0, data_path=data_path)
 
     dset.setEntries((0, dset.N()))
-
+    
     for idx, (ev, wfs) in enumerate(dset.iterate()):
 
         fig, axs = plt.subplots(4, 6, sharex=True, sharey=True, gridspec_kw=dict(hspace=0.06, wspace=0.06))
@@ -126,12 +133,16 @@ def plot_run_waveforms(data_path):
             ax.grid()
             # ax.set_xticks([500, 1500])
 
-            print(f"Ch{ch}: {glitch_detection_per_event.is_channel_scrambled(wfs[ch])}")
-            ax2.plot(np.fft.rfftfreq(2048, 1 / 2.4) * 1000, np.abs(np.fft.rfft(wfs[ch])),
+            # print(f"Ch{ch}: {glitch_detection_per_event.is_channel_scrambled(wfs[ch])}")
+            # ax2.plot(np.fft.rfftfreq(2048, 1 / 2.4) * 1000, 20 * np.log10(np.abs(np.fft.rfft(wfs[ch]))),
+            #          label=f"Ch {ch}", color="C1", lw=1)
+
+            ax2.plot(wfs[ch],
                      label=f"Ch {ch}", color="C1", lw=1)
+            
             ax2.legend(fontsize=5)
             ax2.grid()
-            ax2.set_yscale("log")
+            # ax2.set_yscale("log")
             # ax2.set_xlim(None, 850)
 
 
@@ -142,13 +153,14 @@ def plot_run_waveforms(data_path):
         # ax.set_xlim(30, 120)
         # fig.savefig(f"waveforms_{dset.run}_{idx}_zoom.png", transparent=False)
 
-        fig2.supxlabel("frequency / MHz")
-        fig2.supylabel("spectrum / a.u.")
+        fig2.supxlabel("Sample")
+        fig2.supylabel("ADU")
 
         # fig2.savefig(f"spectras_{dset.run}_{idx}.png", transparent=False)
 
         # sys.exit()
-        plt.show()
+        plt.savefig(os.path.join(plot_path, f"evt_{idx}.pdf"))
+        plt.close()
 
 
 if __name__ == "__main__":

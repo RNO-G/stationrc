@@ -1,7 +1,7 @@
 {
 	"daq": {
-		"data_directory": "PATH/TO/DATA",
-		"mattak_directory": "PATH/TO/MATTAK"
+		"data_directory": "/home/windischhofer/new-daq/run_data/",
+		"mattak_directory": "/home/windischhofer/daq/mattak/build/"
 	},
 	"remote_control": {
 		"host": "127.0.0.1",
