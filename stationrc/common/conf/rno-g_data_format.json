@@ -100,12 +100,12 @@
             ],
             [
                 "lt_phased_trigger_thresholds",
-                "uint8",
+                "uint16",
                 ["RNO_G_NUM_LT_BEAMS"]
             ],
             [
                 "lt_phased_servo_thresholds",
-                "uint8",
+                "uint16",
                 ["RNO_G_NUM_LT_BEAMS"]
             ],
             [
@@ -163,6 +163,10 @@
             [
                 "out",
                 "uint8"
+            ],
+            [
+                "rev",
+                "char"
             ]
         ]
     },
@@ -185,6 +189,44 @@
                 "servo_per_chan",
                 "uint16",
                 ["RNO_G_NUM_LT_CHANNELS"]
+            ]
+        ],
+        "v1": [
+            [
+                "trig_coinc",
+                "uint16"
+            ],
+            [
+                "trig_per_chan",
+                "uint16",
+                ["RNO_G_NUM_LT_CHANNELS"]
+            ],
+            [
+                "servo_coinc",
+                "uint16"
+            ],
+            [
+                "servo_per_chan",
+                "uint16",
+                ["RNO_G_NUM_LT_CHANNELS"]
+            ],
+            [
+                "trig_phased",
+                "uint16"
+            ],
+            [
+                "trig_per_beam",
+                "uint16",
+                ["RNO_G_NUM_LT_BEAMS"]
+            ],
+            [
+                "servo_phased",
+                "uint16"
+            ],
+            [
+                "servo_per_beam",
+                "uint16",
+                ["RNO_G_NUM_LT_BEAMS"]
             ]
         ]
     },
