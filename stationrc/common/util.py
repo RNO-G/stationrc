@@ -1,10 +1,25 @@
+import sys
+import os
 import json
+import numpy as np
 import logging
 import logging.config
 import pathlib
 
 from stationrc.common.Executor import Executor
 from stationrc.common.RNOGDataFile import RNOGDataFile
+
+# Trigger type encoding in header files
+trigger_names = {
+    1: "SOFT",
+    2: "EXT",
+    4: "RF_LT_SIMPLE",
+    8: "RF_LT_PHASED",
+    64: "RADIANTX",
+    80: "RADIANT0",
+    96: "RADIANT1",
+    128: "PPS"
+}
 
 def rootify(data_dir, mattak_dir="", logger=logging.getLogger("root")):
     datadir = pathlib.Path(data_dir)
@@ -52,6 +67,27 @@ def rootify(data_dir, mattak_dir="", logger=logging.getLogger("root")):
 
 
 def dump_binary(wfs_file, read_header=False, hdr_file=None, read_pedestal=False, ped_file=None):
+    """ Dumps data from binary RNO-G DAQ files into a dictionary.
+
+    Parameters
+    ----------
+    wfs_file : str
+        Path to the waveform file to read (typical syntax `XXXXXX.wf.dat.gz`)
+    read_header : bool, optional
+        If True, read the header file (default: False)
+    hdr_file : str, optional
+        Path to the header file to read (typical syntax `XXXXXX.hd.dat.gz`), required if `read_header` is True
+    read_pedestal : bool, optional
+        If True, read the pedestal file (default: False)
+    ped_file : str, optional
+        Path to the pedestal file to read (typical syntax `pedestals.dat.gz`), required if `read_pedestal` is True
+
+    Returns
+    -------
+    data : dict
+        Dictionary containing the data from the files. The keys are "WAVEFORM", "HEADER" and "PEDESTAL"
+        and the values are lists of dictionaries containing the data from each packet.
+    """
 
     if read_header and hdr_file is None:
         raise ValueError("You have to specify 'hdr_file'!")
@@ -59,71 +95,25 @@ def dump_binary(wfs_file, read_header=False, hdr_file=None, read_pedestal=False,
     if read_pedestal and ped_file is None:
         raise ValueError("You have to specify 'ped_file'!")
 
-    waveforms = RNOGDataFile(wfs_file)
-
-    data = {"WAVEFORM": []}
-    while True:
-        packet = waveforms.get_next_packet()
-        if packet is None:
-            break
-
-        packet["radiant_waveforms"] = packet["radiant_waveforms"].tolist()
-        packet["lt_waveforms"] = packet["lt_waveforms"].tolist()
-        packet["digitizer_readout_delay"] = packet["digitizer_readout_delay"].tolist()
-        data["WAVEFORM"].append(packet)
+    data = {}
+    data.update(read_rnog_binary_file(wfs_file, "WAVEFORM"))
 
     if read_header:
-        headers = RNOGDataFile(hdr_file)
-
-        data["HEADER"] = list()
-        while True:
-            packet = headers.get_next_packet()
-            if packet is None:
-                break
-
-            packet["radiant_start_windows"] = packet[
-                "radiant_start_windows"
-            ].tolist()
-            packet["simple_trig_conf"]["_bitfield_stuff"] = packet[
-                "simple_trig_conf"
-            ]["_bitfield_stuff"].tolist()
-            packet["trig_conf"]["_bitfield_stuff"] = packet["trig_conf"][
-                "_bitfield_stuff"
-            ].tolist()
-
-            data["HEADER"].append(packet)
+        data.update(read_rnog_binary_file(hdr_file, "HEADER"))
 
     if read_pedestal:
-        pedestals = RNOGDataFile(ped_file)
-
-        data["PEDESTAL"] = list()
-        while True:
-            packet = pedestals.get_next_packet()
-            if packet is None:
-                break
-
-            packet["vbias"] = packet["vbias"].tolist()
-            packet["pedestals"] = packet["pedestals"].tolist()
-
-            data["PEDESTAL"].append(packet)
+        data.update(read_rnog_binary_file(ped_file, "PEDESTAL"))
 
     return data
 
 
-def setup_logging():
-    with open(pathlib.Path(__file__).parent / "conf" / "logging_conf.json", "r") as f:
-        conf = json.load(f)
-    logging.config.dictConfig(conf)
+def read_run_binary(run_dir):
+    """ Reads the binary files from a RNO-G run directory """
 
+    if not os.path.isdir(run_dir):
+        raise ValueError(f"The (run) directory {run_dir} does not exist!")
 
-if __name__ == "__main__":
-    import sys
-    import os
-
-    if not os.path.isdir(sys.argv[1]):
-        raise ValueError(f"The (run) directory {sys.argv[1]} does not exist!")
-
-    waveforms_dir = os.path.join(sys.argv[1], "waveforms")
+    waveforms_dir = os.path.join(run_dir, "waveforms")
     if not os.path.exists(waveforms_dir):
         raise ValueError(f"Waveforms directory {waveforms_dir} does not exist!")
 
@@ -134,7 +124,7 @@ if __name__ == "__main__":
     print(f"Found {len(waveform_files)} waveform files in {waveforms_dir}.")
     waveform_files = sorted(waveform_files)
 
-    headers_dir = os.path.join(sys.argv[1], "header")
+    headers_dir = os.path.join(run_dir, "header")
 
     for idx, wf_file in enumerate(waveform_files):
         wf_file_path = os.path.join(waveforms_dir, wf_file)
@@ -160,5 +150,78 @@ if __name__ == "__main__":
                 header = hdr_data[event_idx]
                 assert header["event_number"] == event_number, "Missmatch between wf and hdr data"
                 trigger_type = header["trigger_type"]
+                trigger_name = trigger_names.get(trigger_type, "UNKNOWN")
 
             # do something with the data
+
+
+def setup_logging():
+    with open(pathlib.Path(__file__).parent / "conf" / "logging_conf.json", "r") as f:
+        conf = json.load(f)
+    logging.config.dictConfig(conf)
+
+
+def read_rnog_binary_file(path, file_type):
+    """ Read a RNO-G binary file and return the data as a dictionary.
+
+    This function reads a RNO-G binary file and returns the data as a
+    dictionary. All numpy arrays in the data are converted to lists
+    (to make it JSON serializable).
+
+    Parameters
+    ----------
+    path : str
+        Path to the RNO-G binary file.
+    file_type : str
+        Type of the file to read. Can be "WAVEFORM", "HEADER", "PEDESTAL" or "DAQSTATUS".
+
+    Returns
+    -------
+    data : dict
+        Dictionary containing the data from the file. The keys are `file_type`
+        and the values are lists of dictionaries containing the data from each packet.
+
+    Example
+    -------
+
+    ... code-block:: python
+
+        data = read_rnog_binary_file("path/to/file", "WAVEFORM")
+        for event_data in data["WAVEFORM"]:
+            print(event_data["event_number"], event_data["radiant_waveforms"])
+
+    """
+    f = RNOGDataFile(path)
+    data = {file_type: list()}
+    while True:
+            packet = f.get_next_packet()
+            if packet is None:
+                break
+
+            for ele in packet:
+                if  isinstance(packet[ele], np.ndarray):
+                    packet[ele] = packet[ele].tolist()
+
+            data[file_type].append(packet)
+
+    return data
+
+def read_daqstatus(path):
+    data = read_rnog_binary_file(path, "DAQSTATUS")
+    return data
+
+def read_header(path):
+    data = read_rnog_binary_file(path, "HEADER")
+    return data
+
+
+if __name__ == "__main__":
+
+    f = RNOGDataFile(sys.argv[1])
+
+    while True:
+        packet = f.get_next_packet()
+        if packet is None:
+            break
+
+    print("done")
