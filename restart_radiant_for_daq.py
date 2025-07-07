@@ -18,9 +18,9 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "-p",
-    "--power_cycle",
-    action="store_true",
+    "--no_power_cycle",
+    dest="power_cycle",
+    action="store_false",
     help="If true, power cycle radiant.",
 )
 
