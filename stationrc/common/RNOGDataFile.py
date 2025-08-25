@@ -50,6 +50,9 @@ class RNOGDataFile(RawDataFile):
 
         if version not in self.data_format[type]:
             raise ValueError(f"{type} packet version {version} not supported.")
+        #print(self.data_format[type].keys())
+        #print(f'type:    {type}')
+        #print(f'version: {version}')
 
         data = {"type": type}
         for field in self.data_format[type][version]:
@@ -80,7 +83,7 @@ class RNOGDataFile(RawDataFile):
                 data[field[0]] = arr.reshape(shape)
             else:
                 raise ValueError(f"Bad data format: {field}.")
-
+        
         return data
 
     def read_rno_g_calpulser_info(self):
@@ -100,3 +103,6 @@ class RNOGDataFile(RawDataFile):
 
     def read_rno_g_radiant_trigger_config(self):
         return self.read_packet("rno_g_radiant_trigger_config", version=0)
+    
+    def read_rno_g_lt_phased_trigger_config(self):
+        return self.read_packet("rno_g_lt_phased_trigger_config", version=0)
