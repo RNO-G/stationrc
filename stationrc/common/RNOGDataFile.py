@@ -22,6 +22,7 @@ class PacketType(enum.Enum):
 class RNOGDataFile(RawDataFile):
     RNO_G_NUM_LT_CHANNELS = 4
     RNO_G_NUM_RADIANT_CHANNELS = 24
+    RNO_G_NUM_LT_BEAMS = 12
     RNO_G_LAB4D_NSAMPLES = 4096
     RNO_G_PEDESTAL_NSAMPLES = RNO_G_LAB4D_NSAMPLES
 
@@ -45,6 +46,7 @@ class RNOGDataFile(RawDataFile):
     def read_packet(self, type, version):
         version = f"v{version}"
 
+
         if type not in self.data_format:
             raise ValueError(f"Packet type {type} not supported.")
 
@@ -53,6 +55,7 @@ class RNOGDataFile(RawDataFile):
 
         data = {"type": type}
         for field in self.data_format[type][version]:
+
             if len(field) == 2:
                 fcn = getattr(self, f"read_{field[1]}")
                 data[field[0]] = fcn()
@@ -100,3 +103,6 @@ class RNOGDataFile(RawDataFile):
 
     def read_rno_g_radiant_trigger_config(self):
         return self.read_packet("rno_g_radiant_trigger_config", version=0)
+
+    def read_rno_g_lt_phased_trigger_config(self):
+        return self.read_packet("rno_g_lt_phased_trigger_config", version=0)
