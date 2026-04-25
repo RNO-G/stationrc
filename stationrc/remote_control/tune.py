@@ -29,7 +29,7 @@ def main(station, args):
         chs, tuned = initial_tune(
             station, quad, args.frequency, max_tries=args.max_iterations, external_signal=args.external,
             tune_with_rolling_mean=args.average, tune_with_mean=args.tune_with_mean, exclude_channels=args.exclude_channels,
-            selected_channels=args.channel)
+            selected_channels=args.channel, tune_sspin=args.tune_sspin)
         for ch, t in zip(chs, tuned):
             ok[ch] = t
 
@@ -324,7 +324,7 @@ def setup_channel(station, channel):
     return initial_state, seamTuneNum
 
 
-def tuned_width(station, channel, target_width, max_tries, seamTuneNum, TRY_REG_3_FOR_FAILED_DLL):
+def tuned_width(station, channel, target_width, max_tries, seamTuneNum, TRY_REG_3_FOR_FAILED_DLL, tune_sspin):
     scan = 1 if channel > 11 else 0
     width = station.radiant_low_level_interface.lab4d_controller_scan_width(scan)
     logger.info(f"LAB{channel:<2}: Initial SSPin width is {width}, target is below {target_width}")
@@ -349,7 +349,7 @@ def tuned_width(station, channel, target_width, max_tries, seamTuneNum, TRY_REG_
 
     curTry = 0
 
-    while width > target_width and curTry < max_tries:
+    while width > target_width and curTry < max_tries and tune_sspin:
         newAvg = 0
         current_state = station.radiant_low_level_interface.calibration_specifics_get(channel)
 
@@ -400,7 +400,7 @@ def select_channels(station, channels_in_quad, exclude_channels, selected_channe
     return initial_states, seamTuneNums
 
 def initial_tune(station, quad, frequency=510, max_tries=50, bad_lab=False, external_signal=False,
-                 tune_with_rolling_mean=False, tune_with_mean=False, exclude_channels=[], selected_channels=[]):
+                 tune_with_rolling_mean=False, tune_with_mean=False, exclude_channels=[], selected_channels=[], tune_sspin=False):
     """
     Time tuning algorithm
 
@@ -433,6 +433,10 @@ def initial_tune(station, quad, frequency=510, max_tries=50, bad_lab=False, exte
 
     tune_with_mean : bool
         If true, first tune using the mean width of all samples instead of the seam and slow.
+        (Default: False)
+
+    tune_sspin : bool
+        If true, tune the internl signal, SSPin, using signal monitor. Can help tuning convergence if monitor is correct.
         (Default: False)
 
     Returns
@@ -491,7 +495,7 @@ def initial_tune(station, quad, frequency=510, max_tries=50, bad_lab=False, exte
     for ch_idx, channel in enumerate(channels):
         if not failed[ch_idx]:
             curTry, seamTuneNums[ch_idx] = tuned_width(
-                station, channel, target_width, max_tries, seamTuneNums[ch_idx], TRY_REG_3_FOR_FAILED_DLL)
+                station, channel, target_width, max_tries, seamTuneNums[ch_idx], TRY_REG_3_FOR_FAILED_DLL, tune_sspin)
         else:
             # this check is only here necessary
             if ch_idx in selected_channels and ch_idx not in exclude_channels:
