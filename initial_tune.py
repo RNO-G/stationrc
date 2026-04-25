@@ -80,6 +80,11 @@ parser.add_argument(
     help="Specify ip address of host. If `None`, use ip from `virtual_station_config.json`."
 )
 
+parser.add_argument(
+    "--tune_sspin",
+    action="store_true"
+)
+
 args = parser.parse_args()
 
 stationrc.common.setup_logging()
