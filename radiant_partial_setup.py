@@ -51,6 +51,9 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+if "lab4" not in args.steps and (args.labs is not None or not args.pedestals):
+    parser.error("--labs and --no-pedestals require the step lab4.")
+
 stationrc.common.setup_logging()
 
 station = stationrc.remote_control.VirtualStation(host=args.host)
