@@ -1,12 +1,10 @@
 """
 Run selected steps of the RADIANT setup (see `stationrc.radiant.setup_radiant`), e.g., to
-only program the CPLDs to heat up the RADIANT with limited power. Prints the RADIANT current
-reported by the controller board before and after each step.
+only program the CPLDs to heat up the RADIANT with limited power.
 
 Steps (in this order): cplds, analog, lab4. Running all three equals `bring_up.py`.
 """
 import argparse
-import re
 import sys
 
 import stationrc.common
@@ -55,30 +53,15 @@ stationrc.common.setup_logging()
 
 station = stationrc.remote_control.VirtualStation(host=args.host)
 
-
-def print_radiant_current(label):
-    if station.rc.run_local:
-        return  # no controller board access
-
-    data = str(station.get_controller_board_monitoring())
-    match = re.search(r"i_radiant:\s*(\d+)\s*mA", data)
-    if match:
-        print(f"{label}: i_radiant = {match.group(1)} mA")
-    else:
-        print(f"{label}: i_radiant not found in monitoring data:\n{data}")
-
-
 functions = {
     "cplds": lambda: station.radiant_program_cplds(version=args.version),
     "analog": station.radiant_analog_setup,
     "lab4": lambda: station.radiant_lab4_setup(labs=args.labs, pedestals=args.pedestals),
 }
 
-print_radiant_current("before")
 try:
     for step in STEPS:
         if step in args.steps:
             functions[step]()
-            print_radiant_current(f"after {step}")
 except KeyboardInterrupt:
     sys.exit()
