@@ -31,9 +31,11 @@ parser.add_argument(
     "--labs",
     type=int,
     nargs="+",
+    choices=range(24),
     default=None,
-    help="Step lab4: only initialize these LABs (0-23). Skips calibration reload and "
-         "pedestals, the board is not ready for data taking. Default: all LABs.",
+    metavar="LAB",
+    help="Step lab4: only initialize these LABs (0-23). Skips pedestals, the board is not "
+         "ready for data taking. Default: all LABs. Give the steps before this option.",
 )
 parser.add_argument(
     "--no-pedestals",
