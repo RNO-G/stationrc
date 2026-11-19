@@ -30,6 +30,20 @@ parser.add_argument(
     help="Specify version number of config file for CPLDs. Default: 3",
 )
 parser.add_argument(
+    "--labs",
+    type=int,
+    nargs="+",
+    default=None,
+    help="Step lab4: only initialize these LABs (0-23). Skips calibration reload and "
+         "pedestals, the board is not ready for data taking. Default: all LABs.",
+)
+parser.add_argument(
+    "--no-pedestals",
+    dest="pedestals",
+    action="store_false",
+    help="Step lab4: do not take pedestals.",
+)
+parser.add_argument(
     "--host",
     type=str,
     default=None,
@@ -57,7 +71,7 @@ def print_radiant_current(label):
 functions = {
     "cplds": lambda: station.radiant_program_cplds(version=args.version),
     "analog": station.radiant_analog_setup,
-    "lab4": station.radiant_lab4_setup,
+    "lab4": lambda: station.radiant_lab4_setup(labs=args.labs, pedestals=args.pedestals),
 }
 
 print_radiant_current("before")

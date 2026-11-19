@@ -149,8 +149,8 @@ class Station(object):
     def radiant_analog_setup(self):
         stationrc.radiant.analog_setup(self.radiant_board)
 
-    def radiant_lab4_setup(self):
-        stationrc.radiant.lab4_setup(self.radiant_board)
+    def radiant_lab4_setup(self, labs=None, pedestals=True):
+        stationrc.radiant.lab4_setup(self.radiant_board, labs=labs, pedestals=pedestals)
 
     def radiant_tune_initial(self, reset=False, mask=0xFFFFFF):
         fail_mask = stationrc.radiant.tune_initial(

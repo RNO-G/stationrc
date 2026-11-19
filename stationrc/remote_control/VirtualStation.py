@@ -167,8 +167,9 @@ class VirtualStation(object):
     def radiant_analog_setup(self):
         return self.rc.send_command("station", "radiant_analog_setup")
 
-    def radiant_lab4_setup(self):
-        return self.rc.send_command("station", "radiant_lab4_setup")
+    def radiant_lab4_setup(self, labs=None, pedestals=True):
+        return self.rc.send_command(
+            "station", "radiant_lab4_setup", {"labs": labs, "pedestals": pedestals})
 
     def radiant_sig_gen_configure(self, pulse=False, band=0):
         self.rc.send_command(
