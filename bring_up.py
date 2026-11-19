@@ -21,6 +21,17 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--labs",
+    type=int,
+    nargs="+",
+    choices=range(24),
+    default=None,
+    metavar="LAB",
+    help="Only set up these LABs (0-23). Skips pedestals, the board is not ready for "
+         "data taking. Default: all LABs.",
+)
+
+parser.add_argument(
     "--host", "--hosts",
     dest="hosts",
     type=str, default=[None],
@@ -29,13 +40,16 @@ parser.add_argument(
 
 args = parser.parse_args()
 
+if args.labs is not None and args.pedestals:
+    parser.error("--pedestals is not possible with --labs (no pedestals are taken).")
+
 stationrc.common.setup_logging()
 
 for host in args.hosts:
     station = stationrc.remote_control.VirtualStation(load_calibration=True, host=host)
 
     try:
-        station.radiant_setup(version=args.version)
+        station.radiant_setup(version=args.version, labs=args.labs)
     except KeyboardInterrupt:
         sys.exit()
 

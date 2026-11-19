@@ -139,8 +139,8 @@ class Station(object):
             voltage_setting=voltage_setting,
         )
 
-    def radiant_setup(self, version=3):
-        stationrc.radiant.setup_radiant(self, version)
+    def radiant_setup(self, version=3, labs=None):
+        stationrc.radiant.setup_radiant(self, version, labs=labs)
 
     # The three steps of `radiant_setup`, callable on their own (e.g., to only heat up the RADIANT)
     def radiant_program_cplds(self, version=3):
