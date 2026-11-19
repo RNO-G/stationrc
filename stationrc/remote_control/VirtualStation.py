@@ -161,6 +161,15 @@ class VirtualStation(object):
     def radiant_setup(self, version=3):
         return self.rc.send_command("station", "radiant_setup", {"version": version})
 
+    def radiant_program_cplds(self, version=3):
+        return self.rc.send_command("station", "radiant_program_cplds", {"version": version})
+
+    def radiant_analog_setup(self):
+        return self.rc.send_command("station", "radiant_analog_setup")
+
+    def radiant_lab4_setup(self):
+        return self.rc.send_command("station", "radiant_lab4_setup")
+
     def radiant_sig_gen_configure(self, pulse=False, band=0):
         self.rc.send_command(
             "radiant-sig-gen", "signal", {"pulse": pulse, "band": band}

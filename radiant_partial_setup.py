@@ -1,0 +1,70 @@
+"""
+Run selected steps of the RADIANT setup (see `stationrc.radiant.setup_radiant`), e.g., to
+only program the CPLDs to heat up the RADIANT with limited power. Prints the RADIANT current
+reported by the controller board before and after each step.
+
+Steps (in this order): cplds, analog, lab4. Running all three equals `bring_up.py`.
+"""
+import argparse
+import re
+import sys
+
+import stationrc.common
+import stationrc.remote_control
+
+
+STEPS = ["cplds", "analog", "lab4"]
+
+parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+parser.add_argument(
+    "steps",
+    nargs="+",
+    choices=STEPS,
+    help="Setup steps to run (always executed in the order cplds, analog, lab4).",
+)
+parser.add_argument(
+    "-v",
+    "--version",
+    type=int,
+    default=3,
+    help="Specify version number of config file for CPLDs. Default: 3",
+)
+parser.add_argument(
+    "--host",
+    type=str,
+    default=None,
+    help="Specify ip address of host. If `None`, use ip from config in stationrc.",
+)
+args = parser.parse_args()
+
+stationrc.common.setup_logging()
+
+station = stationrc.remote_control.VirtualStation(host=args.host)
+
+
+def print_radiant_current(label):
+    if station.rc.run_local:
+        return  # no controller board access
+
+    data = str(station.get_controller_board_monitoring())
+    match = re.search(r"i_radiant:\s*(\d+)\s*mA", data)
+    if match:
+        print(f"{label}: i_radiant = {match.group(1)} mA")
+    else:
+        print(f"{label}: i_radiant not found in monitoring data:\n{data}")
+
+
+functions = {
+    "cplds": lambda: station.radiant_program_cplds(version=args.version),
+    "analog": station.radiant_analog_setup,
+    "lab4": station.radiant_lab4_setup,
+}
+
+print_radiant_current("before")
+try:
+    for step in STEPS:
+        if step in args.steps:
+            functions[step]()
+            print_radiant_current(f"after {step}")
+except KeyboardInterrupt:
+    sys.exit()
