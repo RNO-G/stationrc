@@ -139,8 +139,18 @@ class Station(object):
             voltage_setting=voltage_setting,
         )
 
-    def radiant_setup(self, version=3):
-        stationrc.radiant.setup_radiant(self, version)
+    def radiant_setup(self, version=3, labs=None, pedestals=True):
+        stationrc.radiant.setup_radiant(self, version, labs=labs, pedestals=pedestals)
+
+    # The three steps of `radiant_setup`, callable on their own (e.g., to only heat up the RADIANT)
+    def radiant_program_cplds(self, version=3):
+        stationrc.radiant.program_cplds(self.radiant_board, version)
+
+    def radiant_analog_setup(self):
+        stationrc.radiant.analog_setup(self.radiant_board)
+
+    def radiant_lab4_setup(self, labs=None, pedestals=True):
+        stationrc.radiant.lab4_setup(self.radiant_board, labs=labs, pedestals=pedestals)
 
     def radiant_tune_initial(self, reset=False, mask=0xFFFFFF):
         fail_mask = stationrc.radiant.tune_initial(
