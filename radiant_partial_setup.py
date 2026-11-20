@@ -34,8 +34,8 @@ parser.add_argument(
     choices=range(24),
     default=None,
     metavar="LAB",
-    help="Step lab4: only initialize these LABs (0-23). Skips pedestals, the board is not "
-         "ready for data taking. Default: all LABs. Give the steps before this option.",
+    help="Step lab4: only initialize these LABs (0-23); the others get zero pedestals. "
+         "Default: all LABs. Give the steps before this option.",
 )
 parser.add_argument(
     "--no-pedestals",

@@ -27,8 +27,7 @@ parser.add_argument(
     choices=range(24),
     default=None,
     metavar="LAB",
-    help="Only set up these LABs (0-23). Skips pedestals, the board is not ready for "
-         "data taking. Default: all LABs.",
+    help="Only set up these LABs (0-23); the others get zero pedestals. Default: all LABs.",
 )
 
 parser.add_argument(
@@ -39,9 +38,6 @@ parser.add_argument(
     help="Specify ip address of host. If `None`, use ip from config in stationrc.")
 
 args = parser.parse_args()
-
-if args.labs is not None and args.pedestals:
-    parser.error("--pedestals is not possible with --labs (no pedestals are taken).")
 
 stationrc.common.setup_logging()
 
