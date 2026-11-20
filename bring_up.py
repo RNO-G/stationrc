@@ -29,6 +29,12 @@ parser.add_argument(
     metavar="LAB",
     help="Only set up these LABs (0-23); the others get zero pedestals. Default: all LABs.",
 )
+parser.add_argument(
+    "--no-pedestals",
+    dest="take_pedestals",
+    action="store_false",
+    help="Do not take pedestals during the setup.",
+)
 
 parser.add_argument(
     "--host", "--hosts",
@@ -39,13 +45,16 @@ parser.add_argument(
 
 args = parser.parse_args()
 
+if args.pedestals and not args.take_pedestals:
+    parser.error("--pedestals (store pedestals) is not possible with --no-pedestals.")
+
 stationrc.common.setup_logging()
 
 for host in args.hosts:
     station = stationrc.remote_control.VirtualStation(load_calibration=True, host=host)
 
     try:
-        station.radiant_setup(version=args.version, labs=args.labs)
+        station.radiant_setup(version=args.version, labs=args.labs, pedestals=args.take_pedestals)
     except KeyboardInterrupt:
         sys.exit()
 
